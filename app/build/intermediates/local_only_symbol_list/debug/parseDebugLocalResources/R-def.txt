@@ -1,0 +1,36 @@
+R_DEF: Internal format may change without notice
+local
+drawable ic_stat_name
+id btnGoogleSignIn
+id btnOpenPdf
+id btnStart
+id btnStop
+id progress
+id recyclerHistory
+id scrollNotes
+id scrollTranscript
+id tvHistory
+id tvNotes
+id tvNotesLabel
+id tvSubtitle
+id tvTitle
+id tvTranscript
+id tvTranscriptLabel
+layout activity_dashboard
+layout activity_login
+layout activity_result
+layout item_history
+string app_name
+string default_web_client_id
+string gcm_defaultSenderId
+string google_api_key
+string google_app_id
+string google_crash_reporting_api_key
+string google_storage_bucket
+string login_button
+string login_title
+string open_pdf
+string project_id
+string start_recording
+string stop_recording
+style Theme.SmartClassroom

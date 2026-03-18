@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.studyai.smartclassroom.app-mergeDebugResources-44:/layout/activity_login.xml",
+        "source": "com.studyai.smartclassroom.app-main-47:/layout/activity_login.xml"
+    },
+    {
+        "merged": "com.studyai.smartclassroom.app-mergeDebugResources-44:/layout/activity_result.xml",
+        "source": "com.studyai.smartclassroom.app-main-47:/layout/activity_result.xml"
+    },
+    {
+        "merged": "com.studyai.smartclassroom.app-mergeDebugResources-44:/layout/item_history.xml",
+        "source": "com.studyai.smartclassroom.app-main-47:/layout/item_history.xml"
+    },
+    {
+        "merged": "com.studyai.smartclassroom.app-mergeDebugResources-44:/layout/activity_dashboard.xml",
+        "source": "com.studyai.smartclassroom.app-main-47:/layout/activity_dashboard.xml"
+    }
+]

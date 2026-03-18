@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:ns1="http://schemas.android.com/tools">
+    <string name="app_name">Smart Classroom Assistant</string>
+    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID</string>
+    <string name="gcm_defaultSenderId" translatable="false">882975117073</string>
+    <string name="google_api_key" translatable="false">AIzaSyDAwJ8vShpBRYhVjZ63cItyvhajdTMBP8A</string>
+    <string name="google_app_id" translatable="false">1:882975117073:android:bf8e7f73e18fab12de06b0</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyDAwJ8vShpBRYhVjZ63cItyvhajdTMBP8A</string>
+    <string name="google_storage_bucket" translatable="false">tiktok-e33c0.firebasestorage.app</string>
+    <string name="login_button">Sign in with Google</string>
+    <string name="login_title">Smart Classroom Assistant</string>
+    <string name="open_pdf">Open PDF</string>
+    <string name="project_id" translatable="false">tiktok-e33c0</string>
+    <string name="start_recording">Start Recording</string>
+    <string name="stop_recording">Stop Recording</string>
+    <style name="Theme.SmartClassroom" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">#2E7D32</item>
+        <item name="colorPrimaryVariant">#1B5E20</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorSecondary">#1565C0</item>
+        <item name="colorSecondaryVariant">#0D47A1</item>
+        <item name="colorOnSecondary">#FFFFFF</item>
+        <item name="android:statusBarColor" ns1:targetApi="l">?attr/colorPrimaryVariant</item>
+    </style>
+</resources>

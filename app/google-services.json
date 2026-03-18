@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "882975117073",
+    "project_id": "tiktok-e33c0",
+    "storage_bucket": "tiktok-e33c0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:882975117073:android:27ec94501d771b08de06b0",
+        "android_client_info": {
+          "package_name": "com.example.tiktok"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAwJ8vShpBRYhVjZ63cItyvhajdTMBP8A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:882975117073:android:bf8e7f73e18fab12de06b0",
+        "android_client_info": {
+          "package_name": "com.studyai.smartclassroom"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDAwJ8vShpBRYhVjZ63cItyvhajdTMBP8A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
