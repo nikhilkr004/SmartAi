@@ -1,4 +1,5 @@
-node_modules/
+# Android build artifacts
+app/build/
 .gradle/
 .idea/
 local.properties
