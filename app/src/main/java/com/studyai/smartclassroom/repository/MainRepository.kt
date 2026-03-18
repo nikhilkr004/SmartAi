@@ -36,12 +36,15 @@ class MainRepository(
         db.collection(Constants.COLLECTION_USERS).document(uid).set(payload).await()
     }
 
-    suspend fun uploadRecordingToBackend(file: File, userId: String): ResponseModel {
-        val userIdBody = userId.toRequestBody("text/plain".toMediaTypeOrNull())
+    suspend fun uploadRecordingToBackend(file: File): ResponseModel {
+        val user = auth.currentUser ?: throw IllegalStateException("User not logged in")
+        val tokenResult = user.getIdToken(true).await()
+        val token = tokenResult.token ?: throw IllegalStateException("Failed to get ID token")
+
         val fileBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
         val filePart = MultipartBody.Part.createFormData("file", file.name, fileBody)
 
-        val resp = RetrofitClient.api.processRecording(filePart, userIdBody)
+        val resp = RetrofitClient.api.processRecording("Bearer $token", filePart)
         if (!resp.isSuccessful) {
             val err = resp.errorBody()?.string()
             throw RuntimeException("Backend error: HTTP ${resp.code()} ${err ?: ""}".trim())

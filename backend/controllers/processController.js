@@ -8,14 +8,11 @@ export async function processAudio(req, res, next) {
   let pdfPath;
 
   try {
-    const { user_id: userId } = req.body || {};
+    const userId = req.user.uid;
     const file = req.file;
 
     if (!file) {
       return res.status(400).json({ error: { message: "`file` is required in multipart form-data" } });
-    }
-    if (!userId || typeof userId !== "string") {
-      return res.status(400).json({ error: { message: "`user_id` is required" } });
     }
 
     audioPath = file.path;

@@ -50,8 +50,7 @@ class MainViewModel(
         viewModelScope.launch {
             try {
                 _state.value = UiState.Loading
-                val uid = repo.currentUserId() ?: throw IllegalStateException("Not logged in")
-                val response = repo.uploadRecordingToBackend(file, uid)
+                val response = repo.uploadRecordingToBackend(file)
                 val recordingId = repo.saveRecordingResult(
                     transcript = response.transcript,
                     notes = response.notes,

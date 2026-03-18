@@ -19,8 +19,8 @@ interface ApiService {
     @Multipart
     @POST("process")
     suspend fun processRecording(
-        @Part file: MultipartBody.Part,
-        @Part("user_id") userId: RequestBody
+        @Header("Authorization") authHeader: String,
+        @Part file: MultipartBody.Part
     ): Response<ResponseModel>
 }
 
