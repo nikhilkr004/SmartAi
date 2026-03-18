@@ -170,10 +170,15 @@ class ScreenRecordService : Service() {
 
             // Broadcast to Dashboard to trigger upload flow.
             if (!path.isNullOrBlank()) {
+                Log.d(Constants.TAG, "SERVICE: Sending STOPPED broadcast for path: $path")
                 val b = Intent(BROADCAST_RECORDING_STOPPED).apply {
+                    setPackage(packageName) // Explicitly target our own app
                     putExtra(EXTRA_SAVED_FILE_PATH, path)
                 }
                 sendBroadcast(b)
+                Log.d(Constants.TAG, "SERVICE: Broadcast sent successfully.")
+            } else {
+                Log.e(Constants.TAG, "SERVICE: Cannot broadcast because path is null!")
             }
         } finally {
             stopForeground(STOP_FOREGROUND_REMOVE)
