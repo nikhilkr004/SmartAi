@@ -8,6 +8,7 @@ import com.google.gson.annotations.SerializedName
 data class ResponseModel(
     @SerializedName("transcript") val transcript: String = "",
     @SerializedName("notes") val notes: String = "",
-    @SerializedName("pdf_url") val pdfUrl: String = ""
+    @SerializedName("pdf_url") val pdfUrl: String = "",
+    @SerializedName("video_url") val videoUrl: String = ""
 )
 

@@ -19,6 +19,9 @@ export async function processAudio(req, res, next) {
     }
 
     audioPath = file.path;
+    // Upload recording to Firebase Storage before it gets deleted.
+    const videoUrl = await uploadRecordingForUser({ userId, recordingPath: audioPath });
+    
     const transcript = await transcribeAudio(audioPath);
     const notes = await generateStructuredNotes(transcript);
     pdfPath = await createNotesPdf({ notes, transcript });
@@ -27,7 +30,8 @@ export async function processAudio(req, res, next) {
     return res.json({
       transcript,
       notes,
-      pdf_url: pdfUrl
+      pdf_url: pdfUrl,
+      video_url: videoUrl
     });
   } catch (err) {
     return next(err);

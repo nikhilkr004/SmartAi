@@ -56,6 +56,7 @@ class MainViewModel(
                     transcript = response.transcript,
                     notes = response.notes,
                     pdfUrl = response.pdfUrl,
+                    videoUrl = response.videoUrl,
                     localFilePath = file.absolutePath
                 )
                 _state.value = UiState.UploadSuccess(response, recordingId)

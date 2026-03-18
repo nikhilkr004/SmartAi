@@ -53,6 +53,7 @@ class MainRepository(
         transcript: String,
         notes: String,
         pdfUrl: String,
+        videoUrl: String,
         localFilePath: String
     ): String {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
@@ -63,6 +64,7 @@ class MainRepository(
             "transcript" to transcript,
             "notes" to notes,
             "pdfUrl" to pdfUrl,
+            "videoUrl" to videoUrl,
             "localFilePath" to localFilePath,
             "createdAt" to FieldValue.serverTimestamp()
         )

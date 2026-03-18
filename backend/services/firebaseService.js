@@ -32,3 +32,31 @@ export async function uploadPdfForUser({ userId, pdfPath }) {
   }
 }
 
+export async function uploadRecordingForUser({ userId, recordingPath }) {
+  try {
+    const admin = await initFirebase();
+    const bucket = admin.storage().bucket();
+
+    const objectName = `users/${userId}/${uuidv4()}.mp4`;
+
+    await bucket.upload(recordingPath, {
+      destination: objectName,
+      metadata: {
+        contentType: "video/mp4",
+        cacheControl: "public, max-age=31536000"
+      }
+    });
+
+    const file = bucket.file(objectName);
+
+    const [signedUrl] = await file.getSignedUrl({
+      action: "read",
+      expires: "2100-01-01T00:00:00Z"
+    });
+
+    return signedUrl;
+  } catch (err) {
+    throw Object.assign(new Error(`Firebase upload error: ${err.message}`), { statusCode: err.statusCode || 502 });
+  }
+}
+
