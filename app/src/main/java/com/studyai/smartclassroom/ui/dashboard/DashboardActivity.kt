@@ -49,14 +49,20 @@ class DashboardActivity : AppCompatActivity() {
             when (intent?.action) {
                 ScreenRecordService.BROADCAST_RECORDING_STOPPED -> {
                     val path = intent.getStringExtra(ScreenRecordService.EXTRA_SAVED_FILE_PATH)
-                    if (path.isNullOrBlank()) return
+                    Log.d(Constants.TAG, "RECEIVER: Broadcast STOPPED received. Path: $path")
+                    if (path.isNullOrBlank()) {
+                        Log.e(Constants.TAG, "RECEIVER: Path is null or blank!")
+                        return
+                    }
                     val f = File(path)
                     if (!f.exists()) {
+                        Log.e(Constants.TAG, "RECEIVER: File does not exist at path: $path")
                         Toast.makeText(this@DashboardActivity, "Recording file missing", Toast.LENGTH_LONG).show()
                         return
                     }
                     binding.btnStart.isEnabled = true
                     binding.btnStop.isEnabled = false
+                    Log.d(Constants.TAG, "RECEIVER: Starting upload for ${f.name}")
                     vm.uploadRecording(f)
                 }
                 ScreenRecordService.BROADCAST_RECORDING_ERROR -> {
@@ -157,14 +163,13 @@ class DashboardActivity : AppCompatActivity() {
 
         // Load initial history.
         vm.loadHistory()
-    }
 
-    override fun onStart() {
-        super.onStart()
+        // Persistent receiver for recording events.
         val filter = IntentFilter().apply {
             addAction(ScreenRecordService.BROADCAST_RECORDING_STOPPED)
             addAction(ScreenRecordService.BROADCAST_RECORDING_ERROR)
         }
+        Log.d(Constants.TAG, "Dashboard: Registering recording receiver (Created)")
         registerReceiver(
             recordingStoppedReceiver,
             filter,
@@ -172,9 +177,24 @@ class DashboardActivity : AppCompatActivity() {
         )
     }
 
+    override fun onStart() {
+        super.onStart()
+        Log.d(Constants.TAG, "Dashboard: onStart")
+    }
+
     override fun onStop() {
         super.onStop()
-        unregisterReceiver(recordingStoppedReceiver)
+        Log.d(Constants.TAG, "Dashboard: onStop (Activity backgrounded)")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(Constants.TAG, "Dashboard: onDestroy (Cleaning up receiver)")
+        try {
+            unregisterReceiver(recordingStoppedReceiver)
+        } catch (e: Exception) {
+            // Might already be unregistered
+        }
     }
 
     /**
