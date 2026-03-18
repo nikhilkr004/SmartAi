@@ -17,14 +17,16 @@ object ProjectionPermissionStore {
         resultData = data
     }
 
-    fun consume(): Pair<Int, Intent>? {
+    fun get(): Pair<Int, Intent>? {
         val code = resultCode
         val data = resultData
         if (code == null || data == null) return null
-        // Clear after read to avoid re-use.
+        return code to data
+    }
+
+    fun clear() {
         resultCode = null
         resultData = null
-        return code to data
     }
 }
 

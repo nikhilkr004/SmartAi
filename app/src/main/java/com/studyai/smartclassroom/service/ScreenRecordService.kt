@@ -72,7 +72,7 @@ class ScreenRecordService : Service() {
                 @Suppress("DEPRECATION")
                 intent.getParcelableExtra(Constants.EXTRA_RESULT_DATA)
             }
-            val fallback = ProjectionPermissionStore.consume()
+            val fallback = ProjectionPermissionStore.get()
             val finalResultCode = if (resultCode != -1) resultCode else fallback?.first ?: -1
             val finalData = data ?: fallback?.second
 
@@ -157,6 +157,7 @@ class ScreenRecordService : Service() {
             mediaProjection = null
 
             val path = outputFile?.absolutePath
+            ProjectionPermissionStore.clear()
             Log.i(Constants.TAG, "Recording stopped. Saved file=$path")
 
             // Broadcast to Dashboard to trigger upload flow.
