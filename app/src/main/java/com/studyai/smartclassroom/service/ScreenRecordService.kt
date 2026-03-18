@@ -114,6 +114,14 @@ class ScreenRecordService : Service() {
             val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
             mediaProjection = mpm.getMediaProjection(finalResultCode, finalData)
 
+            // Android 14 (API 34) requires registering a callback BEFORE creating a virtual display.
+            mediaProjection?.registerCallback(object : MediaProjection.Callback() {
+                override fun onStop() {
+                    Log.i(Constants.TAG, "MediaProjection stopped by system")
+                    stopRecording()
+                }
+            }, null)
+
             virtualDisplay = mediaProjection?.createVirtualDisplay(
                 "SmartClassroomRecorder",
                 width,
