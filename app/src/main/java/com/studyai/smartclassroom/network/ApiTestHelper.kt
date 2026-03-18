@@ -23,18 +23,17 @@ import java.io.File
 object ApiTestHelper {
 
     fun testProcessEndpoint(
+        token: String,
         file: File,
-        userId: String,
         scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
     ) {
         scope.launch {
             try {
-                val userIdBody = userId.toRequestBody("text/plain".toMediaTypeOrNull())
                 val fileBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
                 val filePart = MultipartBody.Part.createFormData("file", file.name, fileBody)
 
                 val resp = withContext(Dispatchers.IO) {
-                    RetrofitClient.api.processRecording(filePart, userIdBody)
+                    RetrofitClient.api.processRecording("Bearer $token", filePart)
                 }
 
                 if (resp.isSuccessful) {

@@ -184,8 +184,16 @@ class DashboardActivity : AppCompatActivity() {
      * This logs success / failure to Logcat.
      */
     private fun runApiConnectivityTestIfNeeded(file: File) {
-        val uid = vm.currentUserId() ?: return
-        ApiTestHelper.testProcessEndpoint(file = file, userId = uid, scope = lifecycleScope)
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        lifecycleScope.launch {
+            try {
+                val tokenResult = user.getIdToken(true).await()
+                val token = tokenResult.token ?: return@launch
+                ApiTestHelper.testProcessEndpoint(token = token, file = file, scope = lifecycleScope)
+            } catch (e: Exception) {
+                Log.e(Constants.TAG, "Failed to get token for API test", e)
+            }
+        }
     }
 
     private fun ensurePermissionsAndStart() {
