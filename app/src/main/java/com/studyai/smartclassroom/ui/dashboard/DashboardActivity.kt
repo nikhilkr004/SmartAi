@@ -45,17 +45,26 @@ class DashboardActivity : AppCompatActivity() {
 
     private val recordingStoppedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            val path = intent?.getStringExtra(ScreenRecordService.EXTRA_SAVED_FILE_PATH)
-            if (path.isNullOrBlank()) return
-            val f = File(path)
-            if (!f.exists()) {
-                Toast.makeText(this@DashboardActivity, "Recording file missing", Toast.LENGTH_LONG).show()
-                return
+            when (intent?.action) {
+                ScreenRecordService.BROADCAST_RECORDING_STOPPED -> {
+                    val path = intent.getStringExtra(ScreenRecordService.EXTRA_SAVED_FILE_PATH)
+                    if (path.isNullOrBlank()) return
+                    val f = File(path)
+                    if (!f.exists()) {
+                        Toast.makeText(this@DashboardActivity, "Recording file missing", Toast.LENGTH_LONG).show()
+                        return
+                    }
+                    binding.btnStart.isEnabled = true
+                    binding.btnStop.isEnabled = false
+                    vm.uploadRecording(f)
+                }
+                ScreenRecordService.BROADCAST_RECORDING_ERROR -> {
+                    val msg = intent.getStringExtra(ScreenRecordService.EXTRA_ERROR_MESSAGE) ?: "Unknown Error"
+                    Toast.makeText(this@DashboardActivity, msg, Toast.LENGTH_LONG).show()
+                    binding.btnStart.isEnabled = true
+                    binding.btnStop.isEnabled = false
+                }
             }
-            binding.btnStart.isEnabled = true
-            binding.btnStop.isEnabled = false
-            // Upload the recorded file.
-            vm.uploadRecording(f)
         }
     }
 
@@ -151,9 +160,13 @@ class DashboardActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        val filter = IntentFilter().apply {
+            addAction(ScreenRecordService.BROADCAST_RECORDING_STOPPED)
+            addAction(ScreenRecordService.BROADCAST_RECORDING_ERROR)
+        }
         registerReceiver(
             recordingStoppedReceiver,
-            IntentFilter(ScreenRecordService.BROADCAST_RECORDING_STOPPED),
+            filter,
             Context.RECEIVER_NOT_EXPORTED
         )
     }

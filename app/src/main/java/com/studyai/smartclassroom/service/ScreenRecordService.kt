@@ -35,7 +35,9 @@ class ScreenRecordService : Service() {
 
     companion object {
         const val BROADCAST_RECORDING_STOPPED = "broadcast_recording_stopped"
+        const val BROADCAST_RECORDING_ERROR = "broadcast_recording_error"
         const val EXTRA_SAVED_FILE_PATH = "extra_saved_file_path"
+        const val EXTRA_ERROR_MESSAGE = "extra_error_message"
     }
 
     private var mediaProjection: MediaProjection? = null
@@ -75,7 +77,11 @@ class ScreenRecordService : Service() {
             val finalData = data ?: fallback?.second
 
             if (finalResultCode == -1 || finalData == null) {
-                Log.e(Constants.TAG, "Missing MediaProjection permission data")
+                Log.e(Constants.TAG, "Missing MediaProjection permission data. Service cannot start recording.")
+                // Notify activity if it's still listening
+                sendBroadcast(Intent(BROADCAST_RECORDING_ERROR).apply {
+                    putExtra(EXTRA_ERROR_MESSAGE, "Permission data missing. Please try again.")
+                })
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 return
