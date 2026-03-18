@@ -65,7 +65,7 @@ class ScreenRecordService : Service() {
             // Immediately enter foreground to satisfy Android's timeout for foreground services.
             startForeground(Constants.NOTIF_ID, buildNotification("Preparing recording"))
 
-            val resultCode = intent.getIntExtra(Constants.EXTRA_RESULT_CODE, -1)
+            val resultCode = intent.getIntExtra(Constants.EXTRA_RESULT_CODE, Integer.MIN_VALUE)
             val data: Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 intent.getParcelableExtra(Constants.EXTRA_RESULT_DATA, Intent::class.java)
             } else {
@@ -73,11 +73,11 @@ class ScreenRecordService : Service() {
                 intent.getParcelableExtra(Constants.EXTRA_RESULT_DATA)
             }
             val fallback = ProjectionPermissionStore.get()
-            val finalResultCode = if (resultCode != -1) resultCode else fallback?.first ?: -1
+            val finalResultCode = if (resultCode != Integer.MIN_VALUE) resultCode else fallback?.first ?: Integer.MIN_VALUE
             val finalData = data ?: fallback?.second
 
-            if (finalResultCode == -1 || finalData == null) {
-                Log.e(Constants.TAG, "Missing MediaProjection permission data. Service cannot start recording.")
+            if (finalResultCode == Integer.MIN_VALUE || finalData == null) {
+                Log.e(Constants.TAG, "Missing MediaProjection permission data (code=$finalResultCode). Service cannot start recording.")
                 // Notify activity if it's still listening
                 sendBroadcast(Intent(BROADCAST_RECORDING_ERROR).apply {
                     putExtra(EXTRA_ERROR_MESSAGE, "Permission data missing. Please try again.")
