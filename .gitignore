@@ -1,0 +1,12 @@
+node_modules/
+.gradle/
+.idea/
+local.properties
+
+# Backend secrets
+backend/.env
+backend/firebase-credentials.json
+
+# Android secrets
+app/google-services.json
+
