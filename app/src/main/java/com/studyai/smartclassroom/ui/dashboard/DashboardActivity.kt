@@ -25,6 +25,7 @@ import com.studyai.smartclassroom.utils.ProjectionPermissionStore
 import com.studyai.smartclassroom.viewmodel.MainViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.File
 
 /**
