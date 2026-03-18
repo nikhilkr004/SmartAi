@@ -33,6 +33,11 @@ class ResultActivity : AppCompatActivity() {
 
         if (transcriptExtra.isNotBlank() || notesExtra.isNotBlank() || pdfUrlExtra.isNotBlank()) {
             bindContent(transcriptExtra, notesExtra, pdfUrlExtra)
+            // Auto-open PDF if it's newly generated (passed via extras)
+            if (pdfUrlExtra.isNotBlank()) {
+                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrlExtra))
+                startActivity(browserIntent)
+            }
         } else if (recordingId.isNotBlank()) {
             loadFromFirestore(recordingId)
         } else {

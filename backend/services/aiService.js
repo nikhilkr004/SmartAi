@@ -36,26 +36,31 @@ export async function generateStructuredNotes(transcript) {
     const client = getClient();
 
     const prompt = [
-      "You are an AI-powered Smart Classroom Assistant.",
-      "Transform the transcript into structured classroom notes.",
+      "You are a professional educational assistant.",
+      "Below is a transcript from a classroom session.",
+      "Please transform this transcript into highly structured, comprehensive, and easy-to-read student notes.",
       "",
-      "Return notes as plain text using clear headings and bullet points.",
-      "Include:",
-      "- Title",
-      "- Key concepts",
-      "- Definitions",
-      "- Examples (if any)",
-      "- Action items / homework",
-      "- 5-question quiz (with answers)",
+      "IMPORTANT INSTRUCTIONS:",
+      "- Maintain the original language of the discussion (e.g., if the transcript is in Hindi or Hinglish, keep the notes in that style).",
+      "- Use a professional tone.",
+      "- Organize with clear, bold headers.",
       "",
-      "Transcript:",
+      "STRUCTURE:",
+      "1. **Lecture Title**: (Create a concise, relevant title)",
+      "2. **Executive Summary**: (2-3 sentences max)",
+      "3. **Key Concepts & Definitions**: (List all important terms discussed)",
+      "4. **Examples & Illustrations**: (Detailed examples provided by the teacher)",
+      "5. **Action Items / Homework**: (Any tasks mentioned)",
+      "6. **Short Quiz**: (5 multiple choice or fill-in-the-blank questions with answers)",
+      "",
+      "TRANSCRIPT:",
       transcript
     ].join("\n");
 
     const resp = await client.chat.completions.create({
-      model: "gpt-4.1-mini",
+      model: "gpt-4o-mini",
       messages: [
-        { role: "system", content: "You write helpful, accurate, structured notes for classroom learning." },
+        { role: "system", content: "You are a master at taking notes from classroom lectures. You produce detailed, structured, and helpful student resources in the lecture's primary language." },
         { role: "user", content: prompt }
       ],
       temperature: 0.3
