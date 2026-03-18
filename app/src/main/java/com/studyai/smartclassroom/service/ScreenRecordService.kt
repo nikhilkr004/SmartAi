@@ -21,6 +21,7 @@ import androidx.core.app.NotificationCompat
 import com.studyai.smartclassroom.R
 import com.studyai.smartclassroom.ui.dashboard.DashboardActivity
 import com.studyai.smartclassroom.utils.Constants
+import com.studyai.smartclassroom.utils.ProjectionPermissionStore
 import java.io.File
 
 /**
@@ -59,15 +60,26 @@ class ScreenRecordService : Service() {
 
     private fun startRecording(intent: Intent) {
         try {
+            // Immediately enter foreground to satisfy Android's timeout for foreground services.
+            startForeground(Constants.NOTIF_ID, buildNotification("Preparing recording"))
+
             val resultCode = intent.getIntExtra(Constants.EXTRA_RESULT_CODE, -1)
-            val data = intent.getParcelableExtra<Intent>(Constants.EXTRA_RESULT_DATA)
-            if (resultCode == -1 || data == null) {
+            val data: Intent? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                intent.getParcelableExtra(Constants.EXTRA_RESULT_DATA, Intent::class.java)
+            } else {
+                @Suppress("DEPRECATION")
+                intent.getParcelableExtra(Constants.EXTRA_RESULT_DATA)
+            }
+            val fallback = ProjectionPermissionStore.consume()
+            val finalResultCode = if (resultCode != -1) resultCode else fallback?.first ?: -1
+            val finalData = data ?: fallback?.second
+
+            if (finalResultCode == -1 || finalData == null) {
                 Log.e(Constants.TAG, "Missing MediaProjection permission data")
+                stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
                 return
             }
-
-            startForeground(Constants.NOTIF_ID, buildNotification("Recording in progress"))
 
             val metrics = DisplayMetrics()
             val wm = getSystemService(Context.WINDOW_SERVICE) as WindowManager
@@ -94,7 +106,7 @@ class ScreenRecordService : Service() {
             }
 
             val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
-            mediaProjection = mpm.getMediaProjection(resultCode, data)
+            mediaProjection = mpm.getMediaProjection(finalResultCode, finalData)
 
             virtualDisplay = mediaProjection?.createVirtualDisplay(
                 "SmartClassroomRecorder",
@@ -117,6 +129,9 @@ class ScreenRecordService : Service() {
 
     private fun stopRecording() {
         try {
+            if (recorder == null) {
+                Log.w(Constants.TAG, "Stop requested but recorder not running")
+            }
             recorder?.run {
                 try {
                     stop()
@@ -139,10 +154,12 @@ class ScreenRecordService : Service() {
             Log.i(Constants.TAG, "Recording stopped. Saved file=$path")
 
             // Broadcast to Dashboard to trigger upload flow.
-            val b = Intent(BROADCAST_RECORDING_STOPPED).apply {
-                putExtra(EXTRA_SAVED_FILE_PATH, path)
+            if (!path.isNullOrBlank()) {
+                val b = Intent(BROADCAST_RECORDING_STOPPED).apply {
+                    putExtra(EXTRA_SAVED_FILE_PATH, path)
+                }
+                sendBroadcast(b)
             }
-            sendBroadcast(b)
         } finally {
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()

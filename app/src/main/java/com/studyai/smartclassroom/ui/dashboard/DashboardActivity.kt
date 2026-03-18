@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.projection.MediaProjectionManager
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -22,6 +21,7 @@ import com.studyai.smartclassroom.network.ApiTestHelper
 import com.studyai.smartclassroom.service.ScreenRecordService
 import com.studyai.smartclassroom.ui.result.ResultActivity
 import com.studyai.smartclassroom.utils.Constants
+import com.studyai.smartclassroom.utils.ProjectionPermissionStore
 import com.studyai.smartclassroom.viewmodel.MainViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -76,6 +76,9 @@ class DashboardActivity : AppCompatActivity() {
             Toast.makeText(this, "Screen capture permission denied", Toast.LENGTH_LONG).show()
             return@registerForActivityResult
         }
+
+        // Store in-memory as a reliable fallback for the service.
+        ProjectionPermissionStore.set(result.resultCode, result.data!!)
 
         val startIntent = Intent(this, ScreenRecordService::class.java).apply {
             action = Constants.ACTION_START_RECORDING
@@ -150,7 +153,8 @@ class DashboardActivity : AppCompatActivity() {
         super.onStart()
         registerReceiver(
             recordingStoppedReceiver,
-            IntentFilter(ScreenRecordService.BROADCAST_RECORDING_STOPPED)
+            IntentFilter(ScreenRecordService.BROADCAST_RECORDING_STOPPED),
+            Context.RECEIVER_NOT_EXPORTED
         )
     }
 
