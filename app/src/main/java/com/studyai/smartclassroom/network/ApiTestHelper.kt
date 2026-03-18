@@ -29,21 +29,23 @@ object ApiTestHelper {
     ) {
         scope.launch {
             try {
+                Log.d(Constants.TAG, "API TEST: File = ${file.name}, size = ${file.length()}")
                 val fileBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
                 val filePart = MultipartBody.Part.createFormData("file", file.name, fileBody)
 
+                Log.d(Constants.TAG, "API TEST: Sending request to /process...")
                 val resp = withContext(Dispatchers.IO) {
                     RetrofitClient.api.processRecording("Bearer $token", filePart)
                 }
 
                 if (resp.isSuccessful) {
-                    Log.i(Constants.TAG, "API TEST SUCCESS: ${resp.body()}")
+                    Log.i(Constants.TAG, "API TEST SUCCESS: Response: ${resp.body()}")
                 } else {
                     val errorText = resp.errorBody()?.string()
-                    Log.e(Constants.TAG, "API TEST FAILED: HTTP ${resp.code()} body=$errorText")
+                    Log.e(Constants.TAG, "API TEST FAILED: HTTP ${resp.code()} Body: $errorText")
                 }
             } catch (e: Exception) {
-                Log.e(Constants.TAG, "API TEST ERROR: ${e.message}", e)
+                Log.e(Constants.TAG, "API TEST CRASH: ${e.message}", e)
             }
         }
     }

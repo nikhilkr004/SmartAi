@@ -188,11 +188,17 @@ class DashboardActivity : AppCompatActivity() {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         lifecycleScope.launch {
             try {
+                Log.d(Constants.TAG, "Fetching ID token for API test...")
                 val tokenResult = user.getIdToken(true).await()
-                val token = tokenResult.token ?: return@launch
+                val token = tokenResult.token ?: run {
+                    Log.e(Constants.TAG, "ID Token result was null!")
+                    return@launch
+                }
+                Log.d(Constants.TAG, "ID Token fetched successfully. Starting connectivity test...")
                 ApiTestHelper.testProcessEndpoint(token = token, file = file, scope = lifecycleScope)
             } catch (e: Exception) {
-                Log.e(Constants.TAG, "Failed to get token for API test", e)
+                Log.e(Constants.TAG, "API TEST FAILURE: Failed to get ID Token! Reason: ${e.message}", e)
+                Log.e(Constants.TAG, "CRITICAL: This usually means your SHA-1 fingerprint is missing in Firebase Console.")
             }
         }
     }

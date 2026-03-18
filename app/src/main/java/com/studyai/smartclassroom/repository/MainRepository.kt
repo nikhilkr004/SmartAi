@@ -37,18 +37,34 @@ class MainRepository(
     }
 
     suspend fun uploadRecordingToBackend(file: File): ResponseModel {
-        val user = auth.currentUser ?: throw IllegalStateException("User not logged in")
+        val user = auth.currentUser ?: run {
+            Log.e(Constants.TAG, "UPLOAD ERROR: User not logged in!")
+            throw IllegalStateException("User not logged in")
+        }
+        
+        Log.d(Constants.TAG, "Starting upload flow for: ${file.name} (${file.length()} bytes)")
+        Log.d(Constants.TAG, "Requesting Firebase ID Token...")
+        
         val tokenResult = user.getIdToken(true).await()
-        val token = tokenResult.token ?: throw IllegalStateException("Failed to get ID token")
-
+        val token = tokenResult.token ?: run {
+            Log.e(Constants.TAG, "UPLOAD FAILED: ID Token was null!")
+            throw IllegalStateException("Failed to get ID token")
+        }
+        
+        Log.d(Constants.TAG, "Token acquired. Creating request...")
         val fileBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
         val filePart = MultipartBody.Part.createFormData("file", file.name, fileBody)
 
+        Log.d(Constants.TAG, "Calling backend /process endpoint...")
         val resp = RetrofitClient.api.processRecording("Bearer $token", filePart)
+        
         if (!resp.isSuccessful) {
             val err = resp.errorBody()?.string()
+            Log.e(Constants.TAG, "BACKEND ERROR: HTTP ${resp.code()} Body: $err")
             throw RuntimeException("Backend error: HTTP ${resp.code()} ${err ?: ""}".trim())
         }
+        
+        Log.i(Constants.TAG, "BACKEND SUCCESS: Response: ${resp.body()}")
         return resp.body() ?: throw RuntimeException("Backend returned empty body")
     }
 
@@ -71,7 +87,9 @@ class MainRepository(
             "localFilePath" to localFilePath,
             "createdAt" to FieldValue.serverTimestamp()
         )
+        Log.d(Constants.TAG, "Saving result to Firestore for user: $uid")
         db.collection(Constants.COLLECTION_RECORDINGS).document(id).set(payload).await()
+        Log.i(Constants.TAG, "FIRESTORE SUCCESS: Record saved with ID: $id")
         return id
     }
 

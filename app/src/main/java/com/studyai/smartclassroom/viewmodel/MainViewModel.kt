@@ -49,8 +49,10 @@ class MainViewModel(
     fun uploadRecording(file: File) {
         viewModelScope.launch {
             try {
+                Log.d(Constants.TAG, "ViewModel: Starting upload process for ${file.name}")
                 _state.value = UiState.Loading
                 val response = repo.uploadRecordingToBackend(file)
+                Log.d(Constants.TAG, "ViewModel: Backend processing complete. Saving result...")
                 val recordingId = repo.saveRecordingResult(
                     transcript = response.transcript,
                     notes = response.notes,
@@ -58,8 +60,10 @@ class MainViewModel(
                     videoUrl = response.videoUrl,
                     localFilePath = file.absolutePath
                 )
+                Log.i(Constants.TAG, "ViewModel: Full flow successful.")
                 _state.value = UiState.UploadSuccess(response, recordingId)
             } catch (e: Exception) {
+                Log.e(Constants.TAG, "ViewModel FLOW ERROR: ${e.message}", e)
                 _state.value = UiState.Error(e.message ?: "Upload failed")
             }
         }
