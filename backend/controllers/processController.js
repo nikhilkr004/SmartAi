@@ -1,6 +1,6 @@
 import { transcribeAudio, generateStructuredNotes } from "../services/aiService.js";
 import { createNotesPdf } from "../services/pdfService.js";
-import { uploadPdfForUser } from "../services/firebaseService.js";
+import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseService.js";
 import { safeUnlink } from "../utils/fileHelper.js";
 
 export async function processAudio(req, res, next) {
@@ -11,19 +11,38 @@ export async function processAudio(req, res, next) {
     const userId = req.user.uid;
     const file = req.file;
 
+    console.log(`[PROCESS] Starting processing for User: ${userId}`);
+
     if (!file) {
+      console.error("[PROCESS] No file received in request");
       return res.status(400).json({ error: { message: "`file` is required in multipart form-data" } });
     }
 
     audioPath = file.path;
-    // Upload recording to Firebase Storage before it gets deleted.
-    const videoUrl = await uploadRecordingForUser({ userId, recordingPath: audioPath });
-    
-    const transcript = await transcribeAudio(audioPath);
-    const notes = await generateStructuredNotes(transcript);
-    pdfPath = await createNotesPdf({ notes, transcript });
-    const pdfUrl = await uploadPdfForUser({ userId, pdfPath });
+    console.log(`[PROCESS] File received: ${file.originalname} -> ${audioPath} (${file.size} bytes)`);
 
+    // Upload recording to Firebase Storage before it gets deleted.
+    console.log("[PROCESS] Uploading original recording to Firebase Storage...");
+    const videoUrl = await uploadRecordingForUser({ userId, recordingPath: audioPath });
+    console.log(`[PROCESS] Recording uploaded. URL: ${videoUrl}`);
+    
+    console.log("[PROCESS] Starting Whisper transcription...");
+    const transcript = await transcribeAudio(audioPath);
+    console.log("[PROCESS] Transcription complete.");
+
+    console.log("[PROCESS] Generating structured notes with AI...");
+    const notes = await generateStructuredNotes(transcript);
+    console.log("[PROCESS] Notes generated.");
+
+    console.log("[PROCESS] Creating PDF...");
+    pdfPath = await createNotesPdf({ notes, transcript });
+    console.log(`[PROCESS] PDF created at: ${pdfPath}`);
+
+    console.log("[PROCESS] Uploading PDF to Firebase Storage...");
+    const pdfUrl = await uploadPdfForUser({ userId, pdfPath });
+    console.log(`[PROCESS] PDF uploaded. URL: ${pdfUrl}`);
+
+    console.log("[PROCESS] Processing complete. Sending response...");
     return res.json({
       transcript,
       notes,
@@ -31,10 +50,11 @@ export async function processAudio(req, res, next) {
       video_url: videoUrl
     });
   } catch (err) {
+    console.error("[PROCESS ERROR]", err);
     return next(err);
   } finally {
-    await safeUnlink(audioPath);
-    await safeUnlink(pdfPath);
+    if (audioPath) await safeUnlink(audioPath);
+    if (pdfPath) await safeUnlink(pdfPath);
   }
 }
 
