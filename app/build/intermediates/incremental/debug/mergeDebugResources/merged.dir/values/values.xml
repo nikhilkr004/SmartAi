@@ -2034,7 +2034,7 @@
     <string name="common_signin_button_text">Sign in</string>
     <string name="common_signin_button_text_long">Sign in with Google</string>
     <string name="copy_toast_msg">Link copied to clipboard</string>
-    <string name="default_web_client_id">YOUR_WEB_CLIENT_ID</string>
+    <string name="default_web_client_id" translatable="false">47406421196-ceg9g9uc504be7jqbbl4ok8qpo9qmtna.apps.googleusercontent.com</string>
     <string description="Screen reader announcement for when a checkbox is on error. [CHAR LIMIT=NONE]" name="error_a11y_label">
     Error: invalid
   </string>
@@ -2045,11 +2045,12 @@
     <string name="fallback_menu_item_copy_link">Copy link</string>
     <string name="fallback_menu_item_open_in_browser">Open in browser</string>
     <string name="fallback_menu_item_share_link">Share link</string>
-    <string name="gcm_defaultSenderId" translatable="false">882975117073</string>
-    <string name="google_api_key" translatable="false">AIzaSyDAwJ8vShpBRYhVjZ63cItyvhajdTMBP8A</string>
-    <string name="google_app_id" translatable="false">1:882975117073:android:bf8e7f73e18fab12de06b0</string>
-    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyDAwJ8vShpBRYhVjZ63cItyvhajdTMBP8A</string>
-    <string name="google_storage_bucket" translatable="false">tiktok-e33c0.firebasestorage.app</string>
+    <string name="firebase_database_url" translatable="false">https://new-e70d7-default-rtdb.asia-southeast1.firebasedatabase.app</string>
+    <string name="gcm_defaultSenderId" translatable="false">47406421196</string>
+    <string name="google_api_key" translatable="false">AIzaSyAzY_tFk32M0ObO-lZZlrE4idkgL52VtWM</string>
+    <string name="google_app_id" translatable="false">1:47406421196:android:ae06a330d7160208e01e69</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyAzY_tFk32M0ObO-lZZlrE4idkgL52VtWM</string>
+    <string name="google_storage_bucket" translatable="false">new-e70d7.firebasestorage.app</string>
     <string name="hide_bottom_view_on_scroll_behavior" translatable="false">com.google.android.material.behavior.HideBottomViewOnScrollBehavior</string>
     <string description="Content description for an icon that appears in the title area of a dialog" name="icon_content_description">Dialog Icon</string>
     <string name="item_view_role_description">Tab</string>
@@ -2167,7 +2168,7 @@
     <string name="path_password_eye_mask_strike_through" translatable="false">M2,4.27 L19.73,22 L22.27,19.46 L4.54,1.73 L4.54,1 L23,1 L23,23 L1,23 L1,4.27 Z</string>
     <string name="path_password_eye_mask_visible" translatable="false">M2,4.27 L2,4.27 L4.54,1.73 L4.54,1.73 L4.54,1 L23,1 L23,23 L1,23 L1,4.27 Z</string>
     <string name="path_password_strike_through" translatable="false">M3.27,4.27 L19.74,20.74</string>
-    <string name="project_id" translatable="false">tiktok-e33c0</string>
+    <string name="project_id" translatable="false">new-e70d7</string>
     <string name="search_menu_title">Search</string>
     <string name="searchbar_scrolling_view_behavior" translatable="false">
     com.google.android.material.search.SearchBar$ScrollingViewBehavior
