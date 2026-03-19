@@ -9,8 +9,10 @@ function requireOpenAiKey() {
 
 function getClient() {
   requireOpenAiKey();
+  const key = process.env.OPENAI_API_KEY;
+  console.log(`[AI SERVICE] Initializing with key prefix: ${key.substring(0, 7)}...`);
   return new OpenAI({ 
-    apiKey: process.env.OPENAI_API_KEY,
+    apiKey: key,
     timeout: 300000 // 5 minutes
   });
 }
@@ -19,7 +21,15 @@ export async function transcribeAudio(audioPath) {
   try {
     const client = getClient();
     const stats = fs.statSync(audioPath);
-    console.log(`[WHISPER] Sending file to OpenAI: ${audioPath} (${stats.size} bytes)`);
+    console.log(`[WHISPER] File: ${audioPath} (${stats.size} bytes)`);
+
+    // Quick verify call to check if key is valid/authorized before long upload
+    try {
+      await client.models.list();
+    } catch (authErr) {
+      console.error("[OPENAI AUTH FAILED]", authErr.message);
+      throw Object.assign(new Error(`OpenAI Auth Failed: ${authErr.message}`), { statusCode: 401 });
+    }
 
     const resp = await client.audio.transcriptions.create({
       file: fs.createReadStream(audioPath),
@@ -38,9 +48,11 @@ export async function transcribeAudio(audioPath) {
       code: err.code,
       type: err.type,
       status: err.status,
-      data: err.response?.data
+      data: err.response?.data,
+      stack: err.stack
     });
-    throw Object.assign(new Error(`OpenAI Whisper error: ${err.message} (Code: ${err.code || "N/A"})`), { statusCode: err.statusCode || 502 });
+    const keyPrefix = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 7) : "NONE";
+    throw Object.assign(new Error(`OpenAI Whisper error: ${err.message} (Code: ${err.code || "N/A"}) [Key: ${keyPrefix}...]`), { statusCode: err.statusCode || 502 });
   }
 }
 
