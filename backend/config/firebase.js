@@ -4,16 +4,29 @@ import fs from "fs/promises";
 let initialized = false;
 
 async function loadServiceAccount() {
-  const p = process.env.FIREBASE_CREDENTIALS_PATH;
-  if (!p) {
-    throw Object.assign(new Error("FIREBASE_CREDENTIALS_PATH is not set"), { statusCode: 500 });
+  // Check for raw JSON string first (ideal for Railway/Cloud)
+  const jsonRaw = process.env.FIREBASE_CREDENTIALS_JSON;
+  if (jsonRaw) {
+    try {
+      return JSON.parse(jsonRaw);
+    } catch (err) {
+      console.error("FIREBASE_CREDENTIALS_JSON parsing failed:", err.message);
+      throw Object.assign(new Error("Invalid FIREBASE_CREDENTIALS_JSON environment variable"), { statusCode: 500 });
+    }
   }
 
-  const raw = await fs.readFile(p, "utf8");
+  // Fallback to file path (local development)
+  const p = process.env.FIREBASE_CREDENTIALS_PATH;
+  if (!p) {
+    throw Object.assign(new Error("Neither FIREBASE_CREDENTIALS_JSON nor FIREBASE_CREDENTIALS_PATH is set"), { statusCode: 500 });
+  }
+
   try {
+    const raw = await fs.readFile(p, "utf8");
     return JSON.parse(raw);
-  } catch {
-    throw Object.assign(new Error("Invalid Firebase credentials JSON"), { statusCode: 500 });
+  } catch (err) {
+    console.error(`Firebase credentials file read failed at ${p}:`, err.message);
+    throw Object.assign(new Error("Missing or invalid Firebase credentials file"), { statusCode: 500 });
   }
 }
 
