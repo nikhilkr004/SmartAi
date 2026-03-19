@@ -23,10 +23,18 @@ export async function transcribeAudio(audioPath) {
 
     const text = resp?.text?.trim();
     if (!text) {
+      console.error("[WHISPER] Transcription returned empty text.");
       throw Object.assign(new Error("Transcription returned empty text"), { statusCode: 502 });
     }
     return text;
   } catch (err) {
+    console.error("[WHISPER ERROR]", {
+      message: err.message,
+      code: err.code,
+      type: err.type,
+      status: err.status,
+      data: err.response?.data
+    });
     throw Object.assign(new Error(`OpenAI Whisper error: ${err.message}`), { statusCode: err.statusCode || 502 });
   }
 }
@@ -68,10 +76,18 @@ export async function generateStructuredNotes(transcript) {
 
     const notes = resp?.choices?.[0]?.message?.content?.trim();
     if (!notes) {
+      console.error("[GPT] Model returned empty notes.");
       throw Object.assign(new Error("GPT returned empty notes"), { statusCode: 502 });
     }
     return notes;
   } catch (err) {
+    console.error("[GPT ERROR]", {
+      message: err.message,
+      code: err.code,
+      type: err.type,
+      status: err.status,
+      data: err.response?.data
+    });
     throw Object.assign(new Error(`OpenAI GPT error: ${err.message}`), { statusCode: err.statusCode || 502 });
   }
 }
