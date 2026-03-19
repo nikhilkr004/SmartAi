@@ -16,7 +16,7 @@ android {
         versionName = "1.0"
 
         // Set to local backend for physical device (Wi-Fi) testing.
-        buildConfigField("String", "BASE_URL", "\"http://192.168.0.104:3000/\"")
+        buildConfigField("String", "BASE_URL", "\"https://d3d9khyb.up.railway.app/\"")
     }
 
     buildTypes {

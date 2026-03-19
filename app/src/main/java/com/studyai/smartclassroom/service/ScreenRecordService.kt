@@ -44,6 +44,7 @@ class ScreenRecordService : Service() {
     private var virtualDisplay: VirtualDisplay? = null
     private var recorder: MediaRecorder? = null
     private var outputFile: File? = null
+    @Volatile private var isStopping = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -142,6 +143,12 @@ class ScreenRecordService : Service() {
     }
 
     private fun stopRecording() {
+        // Guard against double invocation: once from manual stop, once from MediaProjection.Callback.onStop()
+        if (isStopping) {
+            Log.w(Constants.TAG, "stopRecording() called again while already stopping — ignoring.")
+            return
+        }
+        isStopping = true
         try {
             if (recorder == null) {
                 Log.w(Constants.TAG, "Stop requested but recorder not running")
@@ -181,6 +188,7 @@ class ScreenRecordService : Service() {
                 Log.e(Constants.TAG, "SERVICE: Cannot broadcast because path is null!")
             }
         } finally {
+            isStopping = false
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
