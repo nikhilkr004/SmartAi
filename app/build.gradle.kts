@@ -15,8 +15,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // Set to local backend for emulator testing. Change to your production URL as needed.
-        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
+        // Set to local backend for physical device (Wi-Fi) testing.
+        buildConfigField("String", "BASE_URL", "\"http://192.168.0.104:3000/\"")
     }
 
     buildTypes {
