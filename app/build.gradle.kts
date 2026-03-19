@@ -15,8 +15,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // Put your backend URL here or override via BuildConfig in CI.
-        buildConfigField("String", "BASE_URL", "\"https://YOUR_SERVER_URL/\"")
+        // Set to local backend for emulator testing. Change to your production URL as needed.
+        buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:3000/\"")
     }
 
     buildTypes {

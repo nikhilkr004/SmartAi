@@ -13,8 +13,9 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     private val logging = HttpLoggingInterceptor().apply {
-        // Log request/response bodies in debug to help verify backend quickly.
-        level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+        // Use HEADERS in debug to avoid garbled binary output from file uploads.
+        // Change to Level.BODY if you need to debug JSON responses/requests specifically.
+        level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.HEADERS
         else HttpLoggingInterceptor.Level.BASIC
     }
 
