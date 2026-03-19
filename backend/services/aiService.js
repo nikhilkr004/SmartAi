@@ -9,12 +9,17 @@ function requireOpenAiKey() {
 
 function getClient() {
   requireOpenAiKey();
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return new OpenAI({ 
+    apiKey: process.env.OPENAI_API_KEY,
+    timeout: 300000 // 5 minutes
+  });
 }
 
 export async function transcribeAudio(audioPath) {
   try {
     const client = getClient();
+    const stats = fs.statSync(audioPath);
+    console.log(`[WHISPER] Sending file to OpenAI: ${audioPath} (${stats.size} bytes)`);
 
     const resp = await client.audio.transcriptions.create({
       file: fs.createReadStream(audioPath),
@@ -35,7 +40,7 @@ export async function transcribeAudio(audioPath) {
       status: err.status,
       data: err.response?.data
     });
-    throw Object.assign(new Error(`OpenAI Whisper error: ${err.message}`), { statusCode: err.statusCode || 502 });
+    throw Object.assign(new Error(`OpenAI Whisper error: ${err.message} (Code: ${err.code || "N/A"})`), { statusCode: err.statusCode || 502 });
   }
 }
 
