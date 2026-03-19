@@ -1,5 +1,8 @@
 import fs from "fs";
 import OpenAI from "openai";
+import axios from "axios";
+import FormData from "form-data";
+import { safeUnlink } from "../utils/fileHelper.js";
 
 function requireOpenAiKey() {
   if (!process.env.OPENAI_API_KEY) {
@@ -11,7 +14,7 @@ function getClient() {
   requireOpenAiKey();
   const key = process.env.OPENAI_API_KEY;
   console.log(`[AI SERVICE] Initializing with key prefix: ${key.substring(0, 7)}...`);
-  return new OpenAI({ 
+  return new OpenAI({
     apiKey: key,
     timeout: 300000 // 5 minutes
   });
@@ -19,40 +22,49 @@ function getClient() {
 
 export async function transcribeAudio(audioPath) {
   try {
-    const client = getClient();
     const stats = fs.statSync(audioPath);
     console.log(`[WHISPER] File: ${audioPath} (${stats.size} bytes)`);
 
-    // Quick verify call to check if key is valid/authorized before long upload
-    try {
-      await client.models.list();
-    } catch (authErr) {
-      console.error("[OPENAI AUTH FAILED]", authErr.message);
-      throw Object.assign(new Error(`OpenAI Auth Failed: ${authErr.message}`), { statusCode: 401 });
-    }
+    const formData = new FormData();
+    formData.append("file", fs.createReadStream(audioPath));
+    formData.append("model", "whisper-1");
 
-    const resp = await client.audio.transcriptions.create({
-      file: fs.createReadStream(audioPath),
-      model: "whisper-1"
+    console.log(`[WHISPER] Starting axios upload to OpenAI...`);
+    const startTime = Date.now();
+
+    const response = await axios.post("https://api.openai.com/v1/audio/transcriptions", formData, {
+      headers: {
+        ...formData.getHeaders(),
+        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      timeout: 300000 // 5 minutes
     });
 
-    const text = resp?.text?.trim();
+    const duration = (Date.now() - startTime) / 1000;
+    console.log(`[WHISPER] Success! Took ${duration}s`);
+    const text = response.data?.text?.trim();
     if (!text) {
       console.error("[WHISPER] Transcription returned empty text.");
       throw Object.assign(new Error("Transcription returned empty text"), { statusCode: 502 });
     }
     return text;
   } catch (err) {
-    console.error("[WHISPER ERROR]", {
-      message: err.message,
-      code: err.code,
-      type: err.type,
-      status: err.status,
-      data: err.response?.data,
-      stack: err.stack
-    });
+    const errorMsg = err.response?.data?.error?.message || err.message;
+    const errorCode = err.code || "N/A";
     const keyPrefix = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.substring(0, 7) : "NONE";
-    throw Object.assign(new Error(`OpenAI Whisper error: ${err.message} (Code: ${err.code || "N/A"}) [Key: ${keyPrefix}...]`), { statusCode: err.statusCode || 502 });
+
+    console.error("[WHISPER ERROR DETAIL]", {
+      status: err.response?.status,
+      data: err.response?.data,
+      code: errorCode,
+      message: errorMsg
+    });
+
+    throw Object.assign(new Error(`OpenAI Whisper error: ${errorMsg} (Code: ${errorCode}) [Key: ${keyPrefix}...]`), {
+      statusCode: err.response?.status || 502
+    });
   }
 }
 
