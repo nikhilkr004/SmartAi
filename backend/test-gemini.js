@@ -19,8 +19,10 @@ async function verify() {
     console.log("--- Testing Notes Generation ---");
     const testTranscript = "Hello class. Today we will discuss Newton's laws of motion. First, an object at rest stays at rest unless acted on by a force.";
     console.log(`Input: ${testTranscript}`);
-    const notes = await generateStructuredNotes(testTranscript);
+    const { notes, mermaidCode, visualTimestamps } = await generateStructuredNotes(testTranscript);
     console.log(`\nGenerated Notes:\n${notes}\n`);
+    console.log(`Mermaid Flowchart: ${mermaidCode ? "Generated" : "None"}`);
+    console.log(`Visual Timestamps: ${visualTimestamps.join(", ") || "None"}`);
 
     console.log("--- Testing Audio Upload (Syntax and API reachability) ---");
     try {

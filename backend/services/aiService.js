@@ -17,10 +17,23 @@ function getClient() {
   return new GoogleGenerativeAI(key);
 }
 
-function getFileManager() {
+export function getFileManager() {
   requireGeminiKey();
   const key = process.env.GEMINI_API_KEY;
   return new GoogleAIFileManager(key);
+}
+
+/**
+ * Deletes a file from Gemini servers.
+ */
+export async function deleteGeminiFile(fileName) {
+  try {
+    const fileManager = getFileManager();
+    await fileManager.deleteFile(fileName);
+    console.log(`[GEMINI] Deleted temporary file from Gemini server: ${fileName}`);
+  } catch (e) {
+    console.warn(`[GEMINI] Failed to delete remote file: ${e.message}`);
+  }
 }
 
 export async function transcribeAudio(audioPath) {
@@ -86,52 +99,47 @@ export async function transcribeAudio(audioPath) {
       throw Object.assign(new Error("Transcription returned empty text"), { statusCode: 502 });
     }
     
-    return text;
+    return { 
+      transcript: text, 
+      videoFileData: {
+        mimeType: uploadResult.file.mimeType,
+        fileUri: uploadResult.file.uri
+      },
+      geminiFileName: uploadResult.file.name
+    };
   } catch (err) {
-    console.error("[GEMINI ERROR DETAIL]", err);
     throw Object.assign(new Error(`Gemini transcription error: ${err.message}`), {
       statusCode: 502
     });
-  } finally {
-    if (uploadResult && uploadResult.file) {
-      try {
-        await fileManager.deleteFile(uploadResult.file.name);
-        console.log(`[GEMINI] Deleted temporary file from Gemini server: ${uploadResult.file.name}`);
-      } catch (e) {
-        console.warn(`[GEMINI] Failed to delete remote file: ${e.message}`);
-      }
-    }
   }
 }
 
-export async function generateStructuredNotes(transcript) {
+export async function generateStructuredNotes(transcript, videoFileData = null) {
   try {
     const client = getClient();
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-    const prompt = [
-      "You are an expert tutor writing highly comprehensive, detailed study notes for a student.",
-      "Below is a transcript from a classroom session or educational video.",
-      "Your critical task is to extract and beautifully organize EVERYTHING taught in this lecture.",
-      "",
-      "IMPORTANT INSTRUCTIONS:",
-      "- DO NOT just provide a brief overview or simple timestamps. You MUST read the entire transcript and explain all the actual educational topics, formulas, concepts, and details mentioned.",
-      "- TOPIC-AWARE FORMATTING: Dynamically adjust your formatting based on the subject. For example, if it is a programming lecture, include clear code blocks. If it is a history lecture, use timelines. If it is science, explain the processes in detail.",
-      "- Write the notes in a highly conversational, engaging, and human-like tone, as if a brilliant classmate wrote them to help you study.",
-      "- Explain complex rules or topics simply as if you were talking to a friend.",
-      "- Organize the notes logically using headers and bullet points so it is easy to read.",
-      "- Provide specific examples that the teacher used.",
-      "- CREATE A DIAGRAM: You MUST include exactly ONE visual aid in the form of Mermaid.js code (like a concept mindmap or flowchart of the main ideas). Wrap the code EXACTLY inside ```mermaid and ``` tags. Ensure the Mermaid syntax is valid and concise.",
-      "- Keep the original language (if Hindi was spoken, write the concepts out conversationally in Hindi/English).",
-      "",
-      "TRANSCRIPT:",
-      transcript
-    ].join("\n");
+    const promptParts = [
+      { text: "You are an expert tutor writing highly comprehensive, detailed, and beautifully structured study notes for a student." },
+      { text: `Below is a transcript from a classroom session or educational video: \n\n${transcript}` },
+      { text: "Your critical task is to extract and beautifully organize EVERYTHING taught in this lecture." },
+      { text: "IMPORTANT INSTRUCTIONS:" },
+      { text: "- DO NOT just provide a brief overview or simple timestamps. You MUST read the entire transcript and explain all the actual educational topics, formulas, concepts, and details mentioned." },
+      { text: "- TOPIC-AWARE FORMATTING: Dynamically adjust your formatting based on the subject (e.g., code blocks for programming, timelines for history)." },
+      { text: "- Write in a highly conversational, engaging, and human-like tone, as if a brilliant classmate wrote them." },
+      { text: "- CREATE A DIAGRAM: You MUST include exactly ONE visual aid in the form of Mermaid.js code wrapped in ```mermaid tags." }
+    ];
 
-    const result = await model.generateContent([
-      { text: "You are a friendly note-taker. You write very human, conversational summaries and notes of everything spoken." },
-      { text: prompt }
-    ]);
+    if (videoFileData) {
+      promptParts.push({
+        text: "VISUAL INSIGHTS: You have access to the video recording itself. Please identify the 2-3 most important visual moments (e.g., when code, a diagram, or a key slide is shown on screen). Return their exact timestamps in seconds as a JSON list at the very end of your response, formatted exactly like this: [VISUAL_MOMENTS: 4.5, 12.0, 30.5]. Provide a brief context for each screenshot in your notes."
+      });
+      promptParts.push({
+        fileData: videoFileData
+      });
+    }
+
+    const result = await model.generateContent(promptParts);
 
     const text = result.response.text()?.trim();
     if (!text) {
@@ -141,16 +149,27 @@ export async function generateStructuredNotes(transcript) {
 
     let cleanNotes = text;
     let mermaidCode = null;
+    let visualTimestamps = [];
+
+    // Extract Mermaid
     const mermaidRegex = /```mermaid([\s\S]*?)```/i;
-    const match = cleanNotes.match(mermaidRegex);
-    
-    if (match && match[1]) {
-      mermaidCode = match[1].trim();
-      // Strip raw code block from the final readable notes
+    const mermaidMatch = cleanNotes.match(mermaidRegex);
+    if (mermaidMatch && mermaidMatch[1]) {
+      mermaidCode = mermaidMatch[1].trim();
       cleanNotes = cleanNotes.replace(mermaidRegex, "").trim();
     }
 
-    return { notes: cleanNotes, mermaidCode };
+    // Extract Visual Moments
+    const momentsRegex = /\[VISUAL_MOMENTS:\s*([\d\.,\s]+)\]/i;
+    const momentsMatch = cleanNotes.match(momentsRegex);
+    if (momentsMatch && momentsMatch[1]) {
+      visualTimestamps = momentsMatch[1].split(',')
+        .map(t => parseFloat(t.trim()))
+        .filter(t => !isNaN(t));
+      cleanNotes = cleanNotes.replace(momentsRegex, "").trim();
+    }
+
+    return { notes: cleanNotes, mermaidCode, visualTimestamps };
   } catch (err) {
     console.error("[GEMINI GPT ERROR]", err);
     throw Object.assign(new Error(`Gemini notes error: ${err.message}`), { statusCode: 502 });

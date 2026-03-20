@@ -1,8 +1,9 @@
-import { transcribeAudio, generateStructuredNotes } from "../services/aiService.js";
+import { transcribeAudio, generateStructuredNotes, deleteGeminiFile } from "../services/aiService.js";
 import { createNotesPdf } from "../services/pdfService.js";
 import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseService.js";
-import { safeUnlink } from "../utils/fileHelper.js";
+import { safeUnlink, cleanupFile } from "../utils/fileHelper.js";
 import { generateMermaidImage } from "../utils/mermaidHelper.js";
+import { extractMultipleFrames } from "../utils/visualHelper.js";
 
 export async function processAudio(req, res, next) {
   let audioPath;
@@ -27,29 +28,53 @@ export async function processAudio(req, res, next) {
     const videoUrl = await uploadRecordingForUser({ userId, recordingPath: audioPath });
     console.log(`[PROCESS] Recording uploaded. URL: ${videoUrl}`);
     
-    console.log("[PROCESS] Starting Whisper transcription...");
-    const transcript = await transcribeAudio(audioPath);
+    console.log("[PROCESS] Starting Multi-model Analysis...");
+    const { 
+      transcript, 
+      videoFileData, 
+      geminiFileName 
+    } = await transcribeAudio(audioPath);
     console.log("[PROCESS] Transcription complete.");
 
-    console.log("[PROCESS] Generating structured notes with AI...");
-    const { notes, mermaidCode } = await generateStructuredNotes(transcript);
-    console.log("[PROCESS] Notes generated.");
+    console.log("[PROCESS] Generating structured notes and identifying visual moments...");
+    const { 
+      notes, 
+      mermaidCode, 
+      visualTimestamps 
+    } = await generateStructuredNotes(transcript, videoFileData);
+    
+    // Clean up Gemini file early once AI is done with it
+    if (geminiFileName) await deleteGeminiFile(geminiFileName);
 
     let diagramBuffer = null;
     if (mermaidCode) {
-      console.log("[PROCESS] Visual Diagram Code found. Fetching rendering from QuickChart...");
       diagramBuffer = await generateMermaidImage(mermaidCode);
     }
 
-    console.log("[PROCESS] Creating PDF...");
-    pdfPath = await createNotesPdf({ notes, transcript, diagramBuffer });
+    let visualImagePaths = [];
+    if (visualTimestamps && visualTimestamps.length > 0) {
+      console.log(`[PROCESS] AI identified ${visualTimestamps.length} key visual moments. Extracting screenshots...`);
+      visualImagePaths = await extractMultipleFrames(audioPath, visualTimestamps);
+    }
+
+    console.log("[PROCESS] Creating Modern PDF...");
+    pdfPath = await createNotesPdf({ 
+      notes, 
+      transcript, 
+      diagramBuffer, 
+      visualImagePaths 
+    });
     console.log(`[PROCESS] PDF created at: ${pdfPath}`);
 
     console.log("[PROCESS] Uploading PDF to Firebase Storage...");
     const pdfUrl = await uploadPdfForUser({ userId, pdfPath });
-    console.log(`[PROCESS] PDF uploaded. URL: ${pdfUrl}`);
 
-    console.log("[PROCESS] Processing complete. Sending response...");
+    // Cleanup screenshots after PDF is done
+    for (const img of visualImagePaths) {
+       await safeUnlink(img);
+    }
+
+    console.log("[PROCESS] Processing complete.");
     return res.json({
       transcript,
       notes,
