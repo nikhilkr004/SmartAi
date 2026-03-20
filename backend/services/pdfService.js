@@ -72,7 +72,7 @@ function renderSmartContent(doc, text) {
   }
 }
 
-export async function createNotesPdf({ notes, transcript, diagramBuffers, visualImagePaths = [] }) {
+export async function createNotesPdf({ notes, transcript, diagramBuffers, visualImagePaths = [], topic = "Class Session" }) {
   try {
     const tmpDir = getTmpDir();
     await ensureDir(tmpDir);
@@ -82,7 +82,7 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
       size: "A4",
       margin: 54,
       bufferPages: true,
-      info: { Title: "StudyAI Premium Notes" }
+      info: { Title: `StudyAI Notes - ${topic}` }
     });
 
     await new Promise((resolve, reject) => {
@@ -96,66 +96,80 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
       doc.registerFont("HumanFont", regularFontPath);
 
       // --- PAGE 1: HERO & DASHBOARD ---
-      // Background Accent
       doc.rect(0, 0, doc.page.width, 220).fill("#3F51B5");
-      
-      // Title
       doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(32).text("LECTURE GUIDE", 54, 50);
       doc.fontSize(14).font("HumanFont").text("AI-POWERED VISUAL CAPTURE", 54, 85);
       
       // Info Badges
-      doc.roundedRect(54, 120, 120, 40, 5).fill("#5C6BC0");
-      doc.fillColor("#ffffff").fontSize(10).text("TOPIC", 64, 130);
-      doc.fontSize(12).font("HumanFont-Bold").text("Class Session", 64, 142);
+      doc.roundedRect(54, 120, 150, 40, 5).fill("#5C6BC0");
+      doc.fillColor("#ffffff").fontSize(8).text("LECTURE TOPIC", 64, 128);
+      doc.fontSize(11).font("HumanFont-Bold").text(topic.toUpperCase(), 64, 140, { width: 130, height: 20 });
 
-      doc.roundedRect(190, 120, 120, 40, 5).fill("#5C6BC0");
-      doc.fillColor("#ffffff").font("HumanFont").fontSize(10).text("DATE", 200, 130);
-      doc.fontSize(12).font("HumanFont-Bold").text(new Date().toLocaleDateString(), 200, 142);
+      doc.roundedRect(220, 120, 100, 40, 5).fill("#5C6BC0");
+      doc.fillColor("#ffffff").font("HumanFont").fontSize(8).text("GEN DATE", 230, 128);
+      doc.fontSize(11).font("HumanFont-Bold").text(new Date().toLocaleDateString(), 230, 140);
 
-      doc.moveDown(8);
+      doc.moveDown(6);
       
       // --- CONTENT SECTION ---
       doc.fillColor("#1A237E").font("HumanFont-Bold").fontSize(22).text("Core Insights", 54, 240);
       doc.rect(54, 268, 50, 4).fill("#3F51B5");
-      doc.moveDown(2);
+      doc.moveDown(1.5);
 
       renderSmartContent(doc, notes || "");
 
-      // --- Visual Insights Section ---
+      // --- Visual Moments Section (High Density: 3 per page) ---
       if (visualImagePaths && visualImagePaths.length > 0) {
         doc.addPage();
-        doc.rect(0, 0, doc.page.width, 80).fill("#0097A7"); // Cyan for visuals
-        doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(22).text("Visual Moments", 54, 30);
-        doc.moveDown(3);
+        doc.rect(0, 0, doc.page.width, 60).fill("#0097A7");
+        doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(20).text("Visual Moments", 54, 20);
+        doc.moveDown(2);
 
-        for (const imgPath of visualImagePaths) {
+        for (let i = 0; i < visualImagePaths.length; i++) {
+           // New page every 3 images
+           if (i > 0 && i % 3 === 0) {
+             doc.addPage();
+             doc.rect(0, 0, doc.page.width, 40).fill("#0097A7");
+             doc.moveDown(2);
+           }
+           
            try {
-             doc.image(imgPath, {
-               fit: [480, 280],
+             doc.image(visualImagePaths[i], {
+               fit: [480, 200],
                align: 'center'
              });
-             doc.moveDown(0.5);
-             doc.font("HumanFont").fontSize(10).fillColor("#666666").text("SCREENCAP ANALYSIS", { align: "center", characterSpacing: 1 });
-             doc.moveDown(1.5);
+             doc.moveDown(0.3);
+             doc.font("HumanFont").fontSize(9).fillColor("#777777").text(`SCREENCAP #${i+1}`, { align: "center" });
+             doc.moveDown(1);
            } catch (e) {
              console.error("[PDF] Image error:", e.message);
            }
         }
       }
 
-      // --- Diagrams Section ---
+      // --- Diagrams Section (High Density: 2 per page) ---
       if (diagramBuffers && diagramBuffers.length > 0) {
+        doc.addPage();
+        doc.rect(0, 0, doc.page.width, 60).fill("#43A047");
+        doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(20).text("Concept Architecture", 54, 20);
+        doc.moveDown(2);
+
         for (let i = 0; i < diagramBuffers.length; i++) {
-          doc.addPage();
-          doc.rect(0, 0, doc.page.width, 80).fill("#43A047"); // Green for concepts
-          doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(22).text(`Concept Visual #${i + 1}`, 54, 30);
-          doc.moveDown(3);
-          
+          // New page every 2 diagrams
+          if (i > 0 && i % 2 === 0) {
+            doc.addPage();
+            doc.rect(0, 0, doc.page.width, 40).fill("#43A047");
+            doc.moveDown(2);
+          }
+
           try {
             doc.image(diagramBuffers[i], {
-               fit: [480, 450],
+               fit: [450, 320],
                align: 'center'
             });
+            doc.moveDown(0.3);
+            doc.font("HumanFont").fontSize(9).fillColor("#777777").text(`DIAGRAM #${i+1}`, { align: "center" });
+            doc.moveDown(1);
           } catch (imgError) {
             console.error("[PDF] Diagram error:", imgError.message);
           }
@@ -164,10 +178,10 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
 
       // --- Final Transcript ---
       doc.addPage();
-      doc.rect(0, 0, doc.page.width, 60).fill("#455A64"); // Blue-gray
-      doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(18).text("Class Transcript", 54, 22);
-      doc.moveDown(3);
-      doc.fillColor("#555555").font("HumanFont").fontSize(10).text(transcript || "", { lineGap: 1, columns: 2, columnGap: 20 });
+      doc.rect(0, 0, doc.page.width, 40).fill("#455A64");
+      doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(16).text("Full Session Transcript", 54, 12);
+      doc.moveDown(2);
+      doc.fillColor("#666666").font("HumanFont").fontSize(9).text(transcript || "", { lineGap: 1, columns: 2, columnGap: 20 });
 
       doc.end();
       stream.on("finish", resolve);

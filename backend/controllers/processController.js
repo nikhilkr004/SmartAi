@@ -65,11 +65,16 @@ export async function processAudio(req, res, next) {
     }
 
     console.log("[PROCESS] Creating Modern PDF...");
+    // Extraction: Find the first line or heading to use as the PDF topic cover
+    const topicMatch = notes.match(/# (.*)/) || notes.match(/\*\*(.*)\*\*/);
+    const lectureTopic = topicMatch ? topicMatch[1] : "Class Session";
+
     pdfPath = await createNotesPdf({ 
       notes, 
       transcript, 
       diagramBuffers, 
-      visualImagePaths 
+      visualImagePaths,
+      topic: lectureTopic
     });
     console.log(`[PROCESS] PDF created at: ${pdfPath}`);
 
