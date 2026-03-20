@@ -7,23 +7,44 @@ import axios from "axios";
  */
 export async function generateMermaidImage(mermaidCode) {
   if (!mermaidCode) return null;
-  // CLEANER: Remove markdown fences and trim
   let cleanCode = mermaidCode
     .replace(/```mermaid/g, "")
     .replace(/```/g, "")
     .trim();
 
-  // AUTO-FIXER: Fix common AI mistakes
+  // NUCLEAR SANITIZER: Fix labels that break Mermaid
   cleanCode = cleanCode
     .split('\n')
     .map(line => {
-      // 1. Force '->' to '-->' (More stable in Mermaid)
-      if (line.includes('->') && !line.includes('-->')) {
-        return line.replace(/->/g, '-->');
+      let l = line;
+      // 1. Fix Arrows: '->' to '-->'
+      if (l.includes('->') && !l.includes('-->')) {
+        l = l.replace(/->/g, '-->');
       }
-      return line;
+      
+      // 2. Wrap [label] in ["label"] and strip internal quotes/special chars
+      // This fixes A[Message: "Hello"] -> A["Message: Hello"]
+      l = l.replace(/\[(.*?)\]/g, (match, p1) => {
+        const safe = p1.replace(/["'?;()]/g, '').trim();
+        return `["${safe}"]`;
+      });
+
+      // 3. Wrap {label} in {"label"}
+      l = l.replace(/\{(.*?)\}/g, (match, p1) => {
+        const safe = p1.replace(/["'?;()]/g, '').trim();
+        return `{"${safe}"}`;
+      });
+
+      // 4. Wrap (label) in ("label")
+      l = l.replace(/\((.*?)\)/g, (match, p1) => {
+        if (p1.includes('graph ') || p1.includes('flowchart ')) return match; // Skip header
+        const safe = p1.replace(/["'?;()]/g, '').trim();
+        return `("${safe}")`;
+      });
+
+      return l;
     })
-    .filter(line => !line.trim().startsWith('%%')) // Remove comments
+    .filter(line => !line.trim().startsWith('%%'))
     .join('\n');
 
   if (!cleanCode) return null;
@@ -40,10 +61,9 @@ export async function generateMermaidImage(mermaidCode) {
     return Buffer.from(response.data);
   } catch (error) {
     console.warn("[MERMAID ERROR] Rendering failed. Status:", error.response?.status);
-    console.warn("[MERMAID DEBUG] Code that failed:\n", cleanCode);
+    console.warn("[MERMAID DEBUG] Code SENT to server:\n", cleanCode);
     
     try {
-      // Fallback to simpler QuickChart GET
       const url = `https://quickchart.io/mermaid?graph=${encodeURIComponent(cleanCode)}&width=800`;
       const response = await axios.get(url, { responseType: "arraybuffer", timeout: 10000 });
       return Buffer.from(response.data);
