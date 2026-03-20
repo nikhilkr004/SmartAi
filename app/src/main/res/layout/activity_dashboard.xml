@@ -245,12 +245,26 @@
                 android:src="@android:drawable/ic_btn_speak_now"
                 app:tint="@color/text_sub" />
 
-            <ImageView
+            <LinearLayout
+                android:id="@+id/btnNavProfile"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
-                android:src="@android:drawable/ic_menu_manage"
-                app:tint="@color/text_sub" />
+                android:gravity="center"
+                android:orientation="vertical">
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_profile"
+                    app:tint="@color/text_sub" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PROFILE"
+                    android:textSize="10sp"
+                    android:textStyle="bold"
+                    android:textColor="@color/text_sub" />
+            </LinearLayout>
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
