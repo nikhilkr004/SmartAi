@@ -19,6 +19,7 @@
             android:name=".ui.profile.ProfileActivity"
             android:exported="false" />
         <activity android:name=".ui.library.LibraryActivity" android:exported="false" />
+        <activity android:name=".ui.backup.CloudBackupActivity" android:exported="false" />
 
         <activity
             android:name=".ui.pdf.PdfViewerActivity"

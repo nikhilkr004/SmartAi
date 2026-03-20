@@ -38,7 +38,13 @@ class ProfileActivity : AppCompatActivity() {
     private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
             binding.ivAvatar.setImageURI(it)
-            Toast.makeText(this, "Profile picture updated locally!", Toast.LENGTH_SHORT).show()
+            // Persist to Firestore
+            val userId = auth.currentUser?.uid ?: return@let
+            db.collection("users").document(userId)
+                .update("profileImageUrl", it.toString())
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Profile picture synced!", Toast.LENGTH_SHORT).show()
+                }
         }
     }
 

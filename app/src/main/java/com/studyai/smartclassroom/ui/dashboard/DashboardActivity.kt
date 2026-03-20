@@ -239,7 +239,50 @@ class DashboardActivity : AppCompatActivity() {
     }
 
     private fun ensurePermissionsAndStart() {
-        showRecordingSetupDialog()
+        val user = FirebaseAuth.getInstance().currentUser ?: return
+        
+        lifecycleScope.launch {
+            try {
+                binding.progress.visibility = View.VISIBLE
+                
+                // 1. Get Plan Type
+                val userDoc = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    .collection("users").document(user.uid).get().await()
+                val planType = userDoc.getString("planType") ?: "free"
+                
+                // 2. Count Recordings
+                val recordingsSnapshot = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    .collection("recordings")
+                    .whereEqualTo("userId", user.uid)
+                    .get()
+                    .await()
+                
+                val count = recordingsSnapshot.size()
+                binding.progress.visibility = View.GONE
+
+                if (planType == "free" && count >= 5) {
+                    showLimitReachedDialog()
+                } else {
+                    showRecordingSetupDialog()
+                }
+            } catch (e: Exception) {
+                binding.progress.visibility = View.GONE
+                showRecordingSetupDialog() // Fallback to allow use if network fails? Or block?
+            }
+        }
+    }
+
+    private fun showLimitReachedDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.layout_logout_dialog, null) // Reuse layout or create new
+        // For now, let's just use a simple alert or a custom one if I have it
+        com.google.android.material.dialog.MaterialAlertDialogBuilder(this)
+            .setTitle("Limit Reached")
+            .setMessage("You have reached the 5-PDF limit for free accounts. Please upgrade to Pro to record more sessions.")
+            .setPositiveButton("Go Pro") { _, _ ->
+                startActivity(Intent(this, com.studyai.smartclassroom.ui.profile.ProfileActivity::class.java))
+            }
+            .setNegativeButton("Maybe Later", null)
+            .show()
     }
 
     private fun showRecordingSetupDialog() {

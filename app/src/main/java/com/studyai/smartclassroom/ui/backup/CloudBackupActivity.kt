@@ -35,6 +35,7 @@ class CloudBackupActivity : AppCompatActivity() {
 
         binding.rowSchedule.tvRowTitle.text = "Scheduled Backups"
         binding.rowSchedule.ivRowIcon.setImageResource(R.drawable.ic_settings_notifications)
+        binding.rowSchedule.tvRowValue.visibility = View.VISIBLE
         binding.rowSchedule.tvRowValue.text = "Daily, 2 AM"
 
         binding.rowManage.tvRowTitle.text = "Manage Storage"
