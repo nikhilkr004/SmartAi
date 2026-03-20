@@ -82,8 +82,9 @@ class ProfileActivity : AppCompatActivity() {
         binding.rowNotifications.tvRowTitle.text = "Notifications"
         binding.rowNotifications.ivRowIcon.setImageResource(R.drawable.ic_settings_notifications)
         
-        binding.rowPrivacy.tvRowTitle.text = "Privacy & Security"
-        binding.rowPrivacy.ivRowIcon.setImageResource(R.drawable.ic_settings_privacy)
+        binding.rowPrivacy.root.setOnClickListener {
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.security.PrivacySecurityActivity::class.java))
+        }
         
         binding.rowStorage.tvRowTitle.text = "Cloud Backup"
         binding.rowStorage.ivRowIcon.setImageResource(R.drawable.ic_settings_storage)
