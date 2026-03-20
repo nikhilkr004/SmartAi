@@ -120,30 +120,27 @@ export async function generateStructuredNotes(transcript, videoFileData = null, 
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const promptParts = [
-      { text: "You are an expert tutor writing concise, punchy, and highly visual study notes for a student." },
+      { text: "You are a World-Class Academic Tutor writing 'Masterclass' quality study notes for a student." },
       { text: `Below is a transcript from a classroom session: \n\n${transcript}` },
-      { text: "Your goal: Identify the core 20% of content that gives 80% of the value. Keep it short!" },
+      { text: "Your goal: Create a high-value, structured guide that looks handmade and expert." },
       { text: `CONTEXT: The content type is ${contentType}${topic ? ` and the topic is ${topic}` : ""}.` },
-      { text: "CRITICAL VISUAL RULES:" },
-      { text: "1. DIAGRAMS: You MUST include at least TWO (2) distinct diagrams in Mermaid notation. Use ```mermaid blocks. \n" +
-              "   - ONLY use 'graph TD' (top-down) flowcharts. \n" +
-              "   - Use ONLY '-->' for arrows. \n" +
-              "   - Use simple labels like: A[Start] --> B[Process] \n" +
-              "   - DO NOT use complex syntax, colors, or themes inside the Mermaid block." },
-      { text: "2. NO VERBOSITY: Avoid long paragraphs. Use bullet points and bold text." },
-      { text: "3. SPECIAL CALLOUTS: Include at least 2 'Pro Tips' and 2 'Definitions'. \n" +
-              "   - Format Pro Tips as: [TIP: Your tip here] \n" +
-              "   - Format Definitions as: [DEF: Term - Definition] \n" +
-              "   These will be styled specially in the PDF." },
-      { text: "4. DEEP HINTS & EXAMPLES: For each core concept, provide a 'Deep Hint' or a 'Contextual Example' to aid memory. \n" +
-              "   - Format Deep Hints as: [HINT: Your hint/mnemonic here] \n" +
-              "   - Format Examples as: [EX: Your example scenario here] \n" +
-              "   Use clear, bulleted lists for other details." },
-      { text: `5. SPECIALIZED FORMATTING & LANGUAGE CONSISTENCY: \n` +
-              `   - If contentType is 'Coding', provide structured code blocks. \n` +
-              `   - DETECT the programming language being discussed (e.g., Java, Python, JavaScript) and stick to it. DO NOT switch between languages. \n` +
-              `   - If 'Math', use clear step-by-step logic. \n` +
-              `   - Everything must be in English.` }
+      { text: "STRUCTURE REQUIREMENTS (Strictly follow this order):" },
+      { text: "1. # EXECUTIVE SUMMARY: Exactly 3 punchy, high-impact bullet points summarizing the entire session." },
+      { text: "2. # DEEP DIVE: Detailed breakdown of concepts. Use ## for sub-topics. Keep points short but deep." },
+      { text: "3. SPECIAL CALLOUTS: Use these liberally throughout the DEEP DIVE: \n" +
+              "   - [TIP: Pro-level shortcut or insight] \n" +
+              "   - [DEF: Crucial term - Concise definition] \n" +
+              "   - [HINT: Memory trick or deep connection] \n" +
+              "   - [EX: Real-world scenario to apply the concept]" },
+      { text: "4. # DIAGRAM FLOWS: You MUST include at least TWO (2) distinct diagrams in Mermaid notation. Use ```mermaid blocks. \n" +
+              "   - ONLY use 'graph TD' flowcharts. \n" +
+              "   - Use simple arrows '-->' and clear labels like: A[Concept] --> B[Result]" },
+      { text: "5. # MASTERCLASS CHEAT SHEET: A final 'Too Long; Didn't Read' summary or a glossary of formulas/key terms at the end." },
+      { text: "CRITICAL RULES:" },
+      { text: "- NO VERBOSITY: Use short sentences. Focus on conceptual clarity." },
+      { text: "- FORMATTING: Use bold text for key terms. Use bulleted lists for all details." },
+      { text: "- VISUAL LAYOUT: Every major section MUST start with a '#' heading." },
+      { text: "- LANGUAGE: If 'Coding', provide structured code blocks in the detected language. Stick to one language only." }
     ];
 
 
