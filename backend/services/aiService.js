@@ -50,7 +50,7 @@ export async function transcribeAudio(audioPath) {
     console.log(`[GEMINI] Upload successful. URI: ${uploadResult.file.uri}`);
 
     const client = getClient();
-    const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     console.log(`[GEMINI] Generating transcription...`);
     // Note: Gemini understands audio naturally natively
@@ -89,7 +89,7 @@ export async function transcribeAudio(audioPath) {
 export async function generateStructuredNotes(transcript) {
   try {
     const client = getClient();
-    const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = [
       "You are a professional educational assistant.",
