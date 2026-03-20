@@ -1,7 +1,7 @@
 import { transcribeAudio, generateStructuredNotes, deleteGeminiFile } from "../services/aiService.js";
 import { createNotesPdf } from "../services/pdfService.js";
 import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseService.js";
-import { safeUnlink, cleanupFile } from "../utils/fileHelper.js";
+import { safeUnlink } from "../utils/fileHelper.js";
 import { generateMermaidImage } from "../utils/mermaidHelper.js";
 import { extractMultipleFrames } from "../utils/visualHelper.js";
 
