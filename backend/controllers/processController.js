@@ -48,16 +48,7 @@ export async function processAudio(req, res, next) {
 
     const diagramBuffers = [];
     let match;
-    // Priority 1: D2 blocks
-    const d2Regex = /```d2\s*([\s\S]*?)```/g;
-    while ((match = d2Regex.exec(notes)) !== null) {
-      const code = match[1].trim();
-      if (code) {
-        const buffer = await generateD2Image(code);
-        if (buffer) diagramBuffers.push(buffer);
-      }
-    }
-    // Priority 2: Mermaid fallback blocks
+    // Extract Mermaid blocks (Now the primary & only format for stability)
     const mermaidRegex = /```mermaid\s*([\s\S]*?)```/g;
     while ((match = mermaidRegex.exec(notes)) !== null) {
       const code = match[1].trim();

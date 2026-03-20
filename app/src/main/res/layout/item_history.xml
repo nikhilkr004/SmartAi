@@ -41,7 +41,7 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="8dp"
             android:text="Recording #1024"
-            android:textColor="@color/text_main"
+            android:textColor="@color/status_processing"
             android:textSize="14sp"
             android:textStyle="bold"
             android:maxLines="1"
@@ -76,7 +76,7 @@
         <ImageView
             android:layout_width="20dp"
             android:layout_height="20dp"
-            android:src="@android:drawable/btn_default_small"
+            android:src="@drawable/check"
             android:padding="2dp"
             android:background="@drawable/bg_transcript_timestamp" />
 
