@@ -8,8 +8,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.studyai.smartclassroom.databinding.ActivityProfileBinding
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.studyai.smartclassroom.ui.auth.LoginActivity
 import com.studyai.smartclassroom.ui.dashboard.HistoryAdapter
 import com.studyai.smartclassroom.ui.result.ResultActivity
@@ -28,8 +29,15 @@ class ProfileActivity : AppCompatActivity() {
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
 
-    private val favoritesAdapter = HistoryAdapter { recordingId ->
+    private val favoritesAdapter = com.studyai.smartclassroom.ui.library.RecentlyViewedAdapter { recordingId ->
         openPdfViewer(recordingId)
+    }
+
+    private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let {
+            binding.ivAvatar.setImageURI(it)
+            Toast.makeText(this, "Profile picture updated locally!", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,55 +47,98 @@ class ProfileActivity : AppCompatActivity() {
 
         setupUI()
         loadUserData()
-        loadFavoritesPreview()
+        loadStats()
+        loadFavoritesHorizontal()
     }
 
     private fun setupUI() {
         binding.toolbar.setNavigationOnClickListener { finish() }
 
-        binding.recyclerFavorites.apply {
-            layoutManager = LinearLayoutManager(this@ProfileActivity)
+        binding.recyclerFavoritesHorizontal.apply {
+            layoutManager = LinearLayoutManager(this@ProfileActivity, LinearLayoutManager.HORIZONTAL, false)
             adapter = favoritesAdapter
         }
 
+        binding.btnEditAvatar.setOnClickListener { imagePicker.launch("image/*") }
+        binding.btnEditProfile.setOnClickListener { imagePicker.launch("image/*") }
+
         binding.btnSeeAllFavorites.setOnClickListener {
-            startActivity(Intent(this, LibraryActivity::class.java))
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.library.LibraryActivity::class.java))
         }
 
-        binding.btnLogout.setOnClickListener {
+        binding.btnLogOutTab.setOnClickListener {
+            showLogoutDialog()
+        }
+
+        // Settings items
+        binding.rowNotifications.tvRowTitle.text = "Notifications"
+        binding.rowNotifications.ivRowIcon.setImageResource(R.drawable.ic_settings_notifications)
+        
+        binding.rowPrivacy.tvRowTitle.text = "Privacy & Security"
+        binding.rowPrivacy.ivRowIcon.setImageResource(R.drawable.ic_settings_privacy)
+        
+        binding.rowStorage.tvRowTitle.text = "Cloud Backup"
+        binding.rowStorage.ivRowIcon.setImageResource(R.drawable.ic_settings_storage)
+
+        // Bottom Nav Wiring
+        binding.layoutBottomNav.btnNavHome.setOnClickListener { finish() }
+        binding.layoutBottomNav.btnNavLibrary.setOnClickListener { 
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.library.LibraryActivity::class.java))
+            finish()
+        }
+    }
+
+    private fun showLogoutDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.layout_logout_dialog, null)
+        val dialog = MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog_Centered)
+            .setView(dialogView)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogView.findViewById<View>(R.id.btnCancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<View>(R.id.btnConfirmLogout).setOnClickListener {
+            dialog.dismiss()
             auth.signOut()
-            val intent = Intent(this, DashboardActivity::class.java)
+            val intent = Intent(this, com.studyai.smartclassroom.ui.dashboard.DashboardActivity::class.java)
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             startActivity(intent)
             finish()
         }
 
-        // Settings items
-        binding.rowAccount.tvRowTitle.text = "Account Settings"
-        binding.rowNotifications.tvRowTitle.text = "Notification Preferences"
-        binding.rowNotifications.ivRowIcon.setImageResource(R.drawable.ic_settings_notifications)
-        binding.rowStorage.tvRowTitle.text = "Storage Management"
-        binding.rowStorage.ivRowIcon.setImageResource(R.drawable.ic_settings_storage)
-        binding.rowPrivacy.tvRowTitle.text = "Privacy Policy"
-        binding.rowPrivacy.ivRowIcon.setImageResource(R.drawable.ic_settings_privacy)
-
-        // Bottom Nav Wiring
-        binding.layoutBottomNav.btnNavHome.setOnClickListener { finish() }
-        binding.layoutBottomNav.btnNavLibrary.setOnClickListener { 
-            startActivity(Intent(this, LibraryActivity::class.java))
-            finish()
-        }
+        dialog.show()
     }
 
     private fun loadUserData() {
         val user = auth.currentUser
-        binding.tvUserName.text = user?.displayName ?: "Guest Student"
-        binding.tvUserEmail.text = user?.email ?: "No email linked"
-        // ID is usually backend generated, placeholders for now
-        binding.tvUserId.text = "ID: ${user?.uid?.takeLast(10)?.uppercase() ?: "GUEST"}"
+        binding.tvUserName.text = user?.displayName ?: "Scholar Student"
+        // Title placeholder as per mockup
     }
 
-    private fun loadFavoritesPreview() {
+    private fun loadStats() {
+        val userId = auth.currentUser?.uid ?: return
+        
+        lifecycleScope.launch {
+            try {
+                val recordingsSnapshot = db.collection("recordings")
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+                
+                binding.tvSessionsCount.text = "${recordingsSnapshot.size()} Sessions"
+                
+                // Mock stats for other fields as per mockup visual
+                binding.tvStudyTime.text = "${recordingsSnapshot.size() * 15}m" 
+                binding.tvGuidesRead.text = "${recordingsSnapshot.size()}"
+                
+            } catch (e: Exception) { }
+        }
+    }
+
+    private fun loadFavoritesHorizontal() {
         val userId = auth.currentUser?.uid ?: return
 
         lifecycleScope.launch {
@@ -103,12 +154,9 @@ class ProfileActivity : AppCompatActivity() {
                     data["id"] = doc.id
                     data
                 }.sortedByDescending { it["timestamp"] as? com.google.firebase.Timestamp }
-                .take(2)
                 
                 favoritesAdapter.submit(items)
-            } catch (e: Exception) {
-                // Ignore preview errors
-            }
+            } catch (e: Exception) { }
         }
     }
 
@@ -120,7 +168,7 @@ class ProfileActivity : AppCompatActivity() {
                 val topic = doc.getString("topic")
                 
                 if (!pdfUrl.isNullOrBlank()) {
-                    val intent = Intent(this@ProfileActivity, PdfViewerActivity::class.java).apply {
+                    val intent = Intent(this@ProfileActivity, com.studyai.smartclassroom.ui.pdf.PdfViewerActivity::class.java).apply {
                         putExtra(Constants.EXTRA_PDF_URL, pdfUrl)
                         putExtra(Constants.EXTRA_TOPIC, topic)
                         putExtra(Constants.EXTRA_RECORDING_ID, recordingId)
