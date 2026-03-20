@@ -120,19 +120,23 @@ export async function generateStructuredNotes(transcript, videoFileData = null) 
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const promptParts = [
-      { text: "You are an expert tutor writing highly comprehensive, detailed, and beautifully structured study notes for a student." },
-      { text: `Below is a transcript from a classroom session or educational video: \n\n${transcript}` },
-      { text: "Your critical task is to extract and beautifully organize EVERYTHING taught in this lecture." },
-      { text: "IMPORTANT INSTRUCTIONS:" },
-      { text: "- DO NOT just provide a brief overview or simple timestamps. You MUST read the entire transcript and explain all the actual educational topics, formulas, concepts, and details mentioned." },
-      { text: "- TOPIC-AWARE FORMATTING: Dynamically adjust your formatting based on the subject (e.g., code blocks for programming, timelines for history)." },
-      { text: "- Write in a highly conversational, engaging, and human-like tone, as if a brilliant classmate wrote them." },
-      { text: "- CREATE A DIAGRAM: You MUST include exactly ONE visual aid in the form of Mermaid.js code wrapped in ```mermaid tags." }
+      { text: "You are an expert tutor writing concise, punchy, and highly visual study notes for a student." },
+      { text: `Below is a transcript from a classroom session: \n\n${transcript}` },
+      { text: "Your goal: Identify the core 20% of content that gives 80% of the value. Keep it short!" },
+      { text: "CRITICAL VISUAL RULES:" },
+      { text: "1. DIAGRAMS: You MUST include at least THREE (3) distinct diagrams in Mermaid.js format (e.g., flowcharts, sequence diagrams, class diagrams). Spread them throughout the notes." },
+      { text: "2. NO VERBOSITY: Avoid long paragraphs. Use bullet points, bold text, and short 'Insights' boxes." },
+      { text: "3. CODE: If code is mentioned, provide a clean snippet with a brief explanation." }
     ];
 
     if (videoFileData) {
       promptParts.push({
-        text: "VISUAL INSIGHTS: You have access to the video recording itself. Please identify the 2-3 most important visual moments (e.g., when code, a diagram, or a key slide is shown on screen). Return their exact timestamps in seconds as a JSON list at the very end of your response, formatted exactly like this: [VISUAL_MOMENTS: 4.5, 12.0, 30.5]. Provide a brief context for each screenshot in your notes."
+        text: "VISUAL-FIRST ANALYSIS: You have access to the full video. \n" +
+              "1. Identify the 3 most critical visual moments (slides, code, or board) and return their timestamps as [VISUAL_MOMENTS: 1.5, 10.2, ...]. \n" +
+              "2. FOR EACH TIMESTAMP: Provide a 'Visual Guide' section in your notes. Use 'Arrow Callouts' like this: \n" +
+              "- [ARROW: Top Right] This is the main variable declaration. \n" +
+              "- [ARROW: Center] Notice how the loop condition is being modified here. \n" +
+              "Make it feel like you are pointing to the screen for the student."
       });
       promptParts.push({
         fileData: videoFileData
