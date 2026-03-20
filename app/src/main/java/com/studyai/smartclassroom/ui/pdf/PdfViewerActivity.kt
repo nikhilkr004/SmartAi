@@ -38,13 +38,16 @@ class PdfViewerActivity : AppCompatActivity() {
         pdfUrl = intent.getStringExtra(Constants.EXTRA_PDF_URL).orEmpty()
         val topic = intent.getStringExtra(Constants.EXTRA_TOPIC) ?: "Study Notes"
         
-        binding.toolbar.title = topic
+        binding.tvTitle.text = topic
         binding.toolbar.setNavigationOnClickListener { finish() }
+
+        // Handle edge-to-edge
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_STABLE or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
 
         setupWebView()
 
         if (pdfUrl.isNotBlank()) {
-            // Using Google Docs viewer as it's the most reliable way to display remote PDFs in WebView
             val googleDocsUrl = "https://docs.google.com/viewer?embedded=true&url=${Uri.encode(pdfUrl)}"
             binding.webView.loadUrl(googleDocsUrl)
         } else {
@@ -52,10 +55,13 @@ class PdfViewerActivity : AppCompatActivity() {
             finish()
         }
 
-        binding.fabDownload.setOnClickListener { downloadPdf() }
-        binding.fabShare.setOnClickListener { sharePdf() }
-        binding.fabFavorite.setOnClickListener { toggleFavorite() }
-        binding.fabNotes.setOnClickListener { showNotesSheet() }
+        binding.btnDownload.setOnClickListener { downloadPdf() }
+        binding.btnShare.setOnClickListener { sharePdf() }
+        binding.btnFav.setOnClickListener { toggleFavorite() }
+        binding.btnQuickNotes.setOnClickListener { showNotesSheet() }
+        binding.btnSearch.setOnClickListener { 
+            Toast.makeText(this, "Search feature coming soon!", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showNotesSheet() {
@@ -150,7 +156,7 @@ class PdfViewerActivity : AppCompatActivity() {
                 
                 docRef.update("isFavorite", newFavoriteStatus).await()
                 
-                binding.fabFavorite.setImageResource(
+                binding.btnFav.setImageResource(
                     if (newFavoriteStatus) R.drawable.ic_star_filled else R.drawable.ic_star_outline
                 )
                 

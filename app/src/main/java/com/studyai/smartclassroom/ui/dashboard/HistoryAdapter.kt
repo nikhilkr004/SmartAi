@@ -47,14 +47,23 @@ class HistoryAdapter(
                 createdAtObj?.toString().orEmpty()
             }
 
-            binding.tvTitle.text = if (id.isNotBlank()) "Recording #$id" else "Recording"
-            binding.tvSubtitle.text = if (pdfUrl.isNotBlank()) "• PDF READY" else "• PROCESSING"
-            binding.tvSubtitle.setTextColor(
-                if (pdfUrl.isNotBlank()) 
-                    itemView.context.getColor(com.studyai.smartclassroom.R.color.status_ready)
-                else 
-                    itemView.context.getColor(com.studyai.smartclassroom.R.color.status_processing)
-            )
+            val topic = item["topic"]?.toString().orEmpty()
+            val type = item["contentType"]?.toString().orEmpty()
+            
+            binding.tvTitle.text = topic.ifBlank { "Recording #$id" }
+            binding.tvSubtitle.text = if (type.isNotBlank()) type else (if (pdfUrl.isNotBlank()) "• PDF READY" else "• PROCESSING")
+            
+            if (type.isBlank()) {
+                binding.tvSubtitle.setTextColor(
+                    if (pdfUrl.isNotBlank()) 
+                        itemView.context.getColor(com.studyai.smartclassroom.R.color.status_ready)
+                    else 
+                        itemView.context.getColor(com.studyai.smartclassroom.R.color.status_processing)
+                )
+            } else {
+                binding.tvSubtitle.setTextColor(itemView.context.getColor(com.studyai.smartclassroom.R.color.primary_teal))
+            }
+            
             binding.tvDate.text = if (dateStr.isNotBlank()) dateStr else "No date"
 
             binding.root.setOnClickListener {

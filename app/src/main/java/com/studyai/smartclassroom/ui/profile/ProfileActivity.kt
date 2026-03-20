@@ -77,14 +77,9 @@ class ProfileActivity : AppCompatActivity() {
                     .await()
 
                 val items = snapshot.documents.map { doc ->
-                    MainViewModel.HistoryItem(
-                        id = doc.id,
-                        topic = doc.getString("topic") ?: "Untitled Session",
-                        date = doc.getTimestamp("timestamp")?.toDate()?.let { 
-                            java.text.SimpleDateFormat("MMM dd, yyyy").format(it) 
-                        } ?: "Unknown Date",
-                        type = doc.getString("contentType") ?: "General"
-                    )
+                    val data = doc.data?.toMutableMap() ?: mutableMapOf()
+                    data["id"] = doc.id
+                    data // Return the map
                 }
 
                 if (items.isEmpty()) {
