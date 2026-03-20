@@ -11,12 +11,14 @@ import com.google.firebase.auth.FirebaseAuth
 import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContracts
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.firebase.firestore.FirebaseFirestore
 import com.studyai.smartclassroom.ui.auth.LoginActivity
 import com.studyai.smartclassroom.ui.dashboard.HistoryAdapter
 import com.studyai.smartclassroom.ui.result.ResultActivity
 import com.studyai.smartclassroom.utils.Constants
 import com.google.firebase.firestore.Query
 import com.studyai.smartclassroom.R
+import com.studyai.smartclassroom.databinding.ActivityProfileBinding
 import com.studyai.smartclassroom.ui.library.LibraryActivity
 import com.studyai.smartclassroom.ui.pdf.PdfViewerActivity
 import com.studyai.smartclassroom.ui.dashboard.DashboardActivity
@@ -79,6 +81,9 @@ class ProfileActivity : AppCompatActivity() {
         
         binding.rowStorage.tvRowTitle.text = "Cloud Backup"
         binding.rowStorage.ivRowIcon.setImageResource(R.drawable.ic_settings_storage)
+        binding.rowStorage.root.setOnClickListener {
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.backup.CloudBackupActivity::class.java))
+        }
 
         // Bottom Nav Wiring
         binding.layoutBottomNav.btnNavHome.setOnClickListener { finish() }
@@ -90,7 +95,7 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun showLogoutDialog() {
         val dialogView = layoutInflater.inflate(R.layout.layout_logout_dialog, null)
-        val dialog = MaterialAlertDialogBuilder(this, R.style.ThemeOverlay_MaterialComponents_MaterialAlertDialog_Centered)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setView(dialogView)
             .create()
 
