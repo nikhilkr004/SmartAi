@@ -58,8 +58,11 @@ class ResultActivity : AppCompatActivity() {
                 Toast.makeText(this, "PDF URL missing", Toast.LENGTH_LONG).show()
                 return@setOnClickListener
             }
-            val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrl))
-            startActivity(browserIntent)
+            val intent = Intent(this, PdfViewerActivity::class.java).apply {
+                putExtra(Constants.EXTRA_PDF_URL, pdfUrl)
+                putExtra(Constants.EXTRA_TOPIC, binding.tvResultTitle.text.toString())
+            }
+            startActivity(intent)
         }
     }
 
