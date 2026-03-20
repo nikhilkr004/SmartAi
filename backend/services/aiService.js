@@ -135,7 +135,10 @@ export async function generateStructuredNotes(transcript, videoFileData = null, 
               "   - Format Pro Tips as: [TIP: Your tip here] \n" +
               "   - Format Definitions as: [DEF: Term - Definition] \n" +
               "   These will be styled specially in the PDF." },
-      { text: "4. DEEP HINTS & EXAMPLES: For each core concept, provide a 'Deep Hint' or a 'Contextual Example' to aid memory. Use clear, bulleted lists." },
+      { text: "4. DEEP HINTS & EXAMPLES: For each core concept, provide a 'Deep Hint' or a 'Contextual Example' to aid memory. \n" +
+              "   - Format Deep Hints as: [HINT: Your hint/mnemonic here] \n" +
+              "   - Format Examples as: [EX: Your example scenario here] \n" +
+              "   Use clear, bulleted lists for other details." },
       { text: `5. SPECIALIZED FORMATTING & LANGUAGE CONSISTENCY: \n` +
               `   - If contentType is 'Coding', provide structured code blocks. \n` +
               `   - DETECT the programming language being discussed (e.g., Java, Python, JavaScript) and stick to it. DO NOT switch between languages. \n` +

@@ -12,7 +12,9 @@ import { ensureDir, getTmpDir } from "../utils/fileHelper.js";
 function drawCallout(doc, type, content) {
   const colors = {
     TIP: { bg: "#FFF9C4", border: "#FBC02D", text: "#827717", label: "PRO TIP" },
-    DEF: { bg: "#E0F2F1", border: "#009688", text: "#004D40", label: "DEFINITION" }
+    DEF: { bg: "#E0F2F1", border: "#009688", text: "#004D40", label: "DEFINITION" },
+    HINT: { bg: "#F3E5F5", border: "#9C27B0", text: "#4A148C", label: "DEEP HINT" },
+    EX: { bg: "#E3F2FD", border: "#2196F3", text: "#0D47A1", label: "EXAMPLE" }
   };
   const theme = colors[type] || colors.TIP;
 
@@ -49,8 +51,8 @@ function renderSmartContent(doc, text) {
   // Scrub out any raw diagram blocks (Mermaid/D2) so they don't show as text
   const cleanBase = text.replace(/```(mermaid|d2)[\s\S]*?```/g, "").trim();
 
-  // Regex to find [TIP: ...] and [DEF: ...]
-  const parts = cleanBase.split(/(\[TIP:.*?\]|\[DEF:.*?\])/g);
+  // Regex to find [TIP: ...], [DEF: ...], [HINT: ...], [EX: ...]
+  const parts = cleanBase.split(/(\[TIP:.*?\]|\[DEF:.*?\]|\[HINT:.*?\]|\[EX:.*?\])/g);
 
   for (const part of parts) {
     if (part.startsWith("[TIP:")) {
@@ -61,6 +63,14 @@ function renderSmartContent(doc, text) {
       if (doc.y > 650) doc.addPage();
       const content = part.replace("[DEF:", "").replace("]", "").trim();
       drawCallout(doc, "DEF", content);
+    } else if (part.startsWith("[HINT:")) {
+      if (doc.y > 650) doc.addPage();
+      const content = part.replace("[HINT:", "").replace("]", "").trim();
+      drawCallout(doc, "HINT", content);
+    } else if (part.startsWith("[EX:")) {
+      if (doc.y > 650) doc.addPage();
+      const content = part.replace("[EX:", "").replace("]", "").trim();
+      drawCallout(doc, "EX", content);
     } else {
       const cleanText = part.trim();
       if (cleanText) {

@@ -31,9 +31,10 @@ class ResultActivity : AppCompatActivity() {
         val notesExtra = intent.getStringExtra(Constants.EXTRA_NOTES).orEmpty()
         val pdfUrlExtra = intent.getStringExtra(Constants.EXTRA_PDF_URL).orEmpty()
         val contentTypeExtra = intent.getStringExtra(Constants.EXTRA_CONTENT_TYPE).orEmpty()
+        val topicExtra = intent.getStringExtra(Constants.EXTRA_TOPIC).orEmpty()
 
         if (transcriptExtra.isNotBlank() || notesExtra.isNotBlank() || pdfUrlExtra.isNotBlank()) {
-            bindContent(transcriptExtra, notesExtra, pdfUrlExtra, contentTypeExtra)
+            bindContent(transcriptExtra, notesExtra, pdfUrlExtra, contentTypeExtra, topicExtra)
             // Auto-open PDF if it's newly generated (passed via extras)
             if (pdfUrlExtra.isNotBlank()) {
                 val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrlExtra))
@@ -58,10 +59,15 @@ class ResultActivity : AppCompatActivity() {
         }
     }
 
-    private fun bindContent(transcript: String, notes: String, pdfUrl: String, contentType: String = "") {
+    private fun bindContent(transcript: String, notes: String, pdfUrl: String, contentType: String = "", topic: String = "") {
         binding.tvTranscript.text = transcript
         binding.tvNotes.text = notes
         binding.btnOpenPdf.tag = pdfUrl
+
+        if (topic.isNotBlank()) {
+            val date = java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault()).format(java.util.Date())
+            binding.tvMetadata.text = "$topic • $date"
+        }
         
         // Handle specialized content (Coding)
         if (contentType.equals("Coding", ignoreCase = true) || notes.contains("```")) {
@@ -106,7 +112,8 @@ class ResultActivity : AppCompatActivity() {
                 val notes = data["notes"]?.toString().orEmpty()
                 val pdfUrl = data["pdfUrl"]?.toString().orEmpty()
                 val contentType = data["contentType"]?.toString().orEmpty()
-                bindContent(transcript, notes, pdfUrl, contentType)
+                val topic = data["topic"]?.toString().orEmpty()
+                bindContent(transcript, notes, pdfUrl, contentType, topic)
             } catch (e: Exception) {
                 Toast.makeText(this@ResultActivity, e.message ?: "Failed to load", Toast.LENGTH_LONG).show()
                 finish()

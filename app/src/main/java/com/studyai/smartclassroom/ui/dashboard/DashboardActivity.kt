@@ -152,6 +152,7 @@ class DashboardActivity : AppCompatActivity() {
                             putExtra(Constants.EXTRA_PDF_URL, resp.pdfUrl)
                             putExtra(Constants.EXTRA_RECORDING_ID, state.recordingId)
                             putExtra(Constants.EXTRA_CONTENT_TYPE, selectedContentType) 
+                            putExtra(Constants.EXTRA_TOPIC, selectedTopic)
                         }
                         startActivity(i)
                         vm.loadHistory()
@@ -234,18 +235,30 @@ class DashboardActivity : AppCompatActivity() {
         val types = arrayOf("Coding", "Math", "Aptitude", "General")
         var tempType = "General"
         
-        val dialogView = layoutInflater.inflate(android.R.layout.select_dialog_item, null) // Simple for now
-        
+        // Dynamic layout for dialog with EditText
+        val layout = android.widget.LinearLayout(this).apply {
+            orientation = android.widget.LinearLayout.VERTICAL
+            setPadding(60, 40, 60, 0)
+        }
+
+        val etTopic = android.widget.EditText(this).apply {
+            hint = "Enter Topic (e.g. Java Loops)"
+            setText("Session on ${types[3]}")
+        }
+        layout.addView(etTopic)
+
         val builder = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("Recording Setup")
+            .setView(layout)
             .setSingleChoiceItems(types, 3) { _, which ->
                 tempType = types[which]
+                if (etTopic.text.toString().startsWith("Session on")) {
+                    etTopic.setText("Session on ${types[which]}")
+                }
             }
             .setPositiveButton("Start") { _, _ ->
                 selectedContentType = tempType
-                // For simplicity, we'll use a fixed topic or the type if no input. 
-                // A real app would have an EditText here.
-                selectedTopic = "Session on $selectedContentType"
+                selectedTopic = etTopic.text.toString().ifBlank { "Session on $selectedContentType" }
                 requestAudioPermission.launch(Manifest.permission.RECORD_AUDIO)
             }
             .setNegativeButton("Cancel", null)
