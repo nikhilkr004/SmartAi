@@ -188,7 +188,6 @@ class ScreenRecordService : Service() {
                 Log.e(Constants.TAG, "SERVICE: Cannot broadcast because path is null!")
             }
         } finally {
-            isStopping = false
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
