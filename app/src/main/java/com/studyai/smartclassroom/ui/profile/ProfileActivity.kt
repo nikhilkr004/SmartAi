@@ -81,6 +81,9 @@ class ProfileActivity : AppCompatActivity() {
         // Settings items
         binding.rowNotifications.tvRowTitle.text = "Notifications"
         binding.rowNotifications.ivRowIcon.setImageResource(R.drawable.ic_settings_notifications)
+        binding.rowNotifications.root.setOnClickListener {
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.notifications.NotificationSettingsActivity::class.java))
+        }
         
         binding.rowPrivacy.tvRowTitle.text = "Privacy & Security"
         binding.rowPrivacy.ivRowIcon.setImageResource(R.drawable.ic_settings_privacy)

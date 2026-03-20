@@ -53,7 +53,7 @@
 
                 <LinearLayout
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:gravity="center_horizontal"
                     android:orientation="vertical"
                     android:padding="32dp">
@@ -65,6 +65,7 @@
                         app:cardBackgroundColor="#E0F2F1"
                         app:cardCornerRadius="32dp"
                         app:cardElevation="0dp">
+
                         <ImageView
                             android:id="@+id/ivStatusIcon"
                             android:layout_width="match_parent"
@@ -105,8 +106,23 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-                            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Last Backup" android:textColor="#B0BEC5" android:textSize="10sp" android:textStyle="bold" />
-                            <TextView android:id="@+id/tvLastBackup" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="2 hours ago" android:textColor="#102027" android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Last Backup"
+                                android:textColor="#B0BEC5"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvLastBackup"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="2 hours ago"
+                                android:textColor="#102027"
+                                android:textStyle="bold" />
                         </LinearLayout>
 
                         <LinearLayout
@@ -114,8 +130,24 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:orientation="vertical">
-                            <TextView android:id="@+id/tvStorageLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Backup Size" android:textColor="#B0BEC5" android:textSize="10sp" android:textStyle="bold" />
-                            <TextView android:id="@+id/tvStorageValue" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:text="1.2 GB" android:textColor="#102027" android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvStorageLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Backup Size"
+                                android:textColor="#B0BEC5"
+                                android:textSize="10sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvStorageValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="1.2 GB"
+                                android:textColor="#102027"
+                                android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
 
@@ -123,8 +155,25 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="24dp">
-                        <TextView android:id="@+id/tvProgressLabel" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Storage Used: 5 PDF Limit" android:textColor="#B0BEC5" android:textSize="11sp" android:textStyle="bold" />
-                        <TextView android:id="@+id/tvPercentage" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_alignParentEnd="true" android:text="42%" android:textColor="@color/primary_teal" android:textSize="11sp" android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvProgressLabel"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Storage Used: 5 PDF Limit"
+                            android:textColor="#B0BEC5"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvPercentage"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_alignParentEnd="true"
+                            android:text="42%"
+                            android:textColor="@color/primary_teal"
+                            android:textSize="11sp"
+                            android:textStyle="bold" />
                     </RelativeLayout>
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator

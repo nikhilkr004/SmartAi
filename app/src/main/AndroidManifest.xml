@@ -21,6 +21,7 @@
         <activity android:name=".ui.library.LibraryActivity" android:exported="false" />
         <activity android:name=".ui.backup.CloudBackupActivity" android:exported="false" />
         <activity android:name=".ui.security.PrivacySecurityActivity" android:exported="false" />
+        <activity android:name=".ui.notifications.NotificationSettingsActivity" android:exported="false" />
 
         <activity
             android:name=".ui.pdf.PdfViewerActivity"
