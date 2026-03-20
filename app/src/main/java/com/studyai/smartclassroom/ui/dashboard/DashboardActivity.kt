@@ -38,6 +38,8 @@ class DashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityDashboardBinding
     private val vm: MainViewModel by lazy { MainViewModel() }
+    private var selectedContentType: String = "General"
+    private var selectedTopic: String = ""
     private val adapter: HistoryAdapter by lazy {
         HistoryAdapter { id ->
             openHistoryItem(id)
@@ -62,8 +64,8 @@ class DashboardActivity : AppCompatActivity() {
                     }
                     binding.btnStart.isEnabled = true
                     binding.btnStop.isEnabled = false
-                    Log.d(Constants.TAG, "RECEIVER: Starting upload for ${f.name}")
-                    vm.uploadRecording(f)
+                    Log.d(Constants.TAG, "RECEIVER: Starting upload for ${f.name} (Type: $selectedContentType, Topic: $selectedTopic)")
+                    vm.uploadRecording(f, selectedContentType, selectedTopic)
                 }
                 ScreenRecordService.BROADCAST_RECORDING_ERROR -> {
                     val msg = intent.getStringExtra(ScreenRecordService.EXTRA_ERROR_MESSAGE) ?: "Unknown Error"
@@ -149,6 +151,7 @@ class DashboardActivity : AppCompatActivity() {
                             putExtra(Constants.EXTRA_NOTES, resp.notes)
                             putExtra(Constants.EXTRA_PDF_URL, resp.pdfUrl)
                             putExtra(Constants.EXTRA_RECORDING_ID, state.recordingId)
+                            putExtra(Constants.EXTRA_CONTENT_TYPE, selectedContentType) 
                         }
                         startActivity(i)
                         vm.loadHistory()
@@ -224,8 +227,30 @@ class DashboardActivity : AppCompatActivity() {
     }
 
     private fun ensurePermissionsAndStart() {
-        // Only RECORD_AUDIO is runtime; FOREGROUND_SERVICE is normal permission.
-        requestAudioPermission.launch(Manifest.permission.RECORD_AUDIO)
+        showRecordingSetupDialog()
+    }
+
+    private fun showRecordingSetupDialog() {
+        val types = arrayOf("Coding", "Math", "Aptitude", "General")
+        var tempType = "General"
+        
+        val dialogView = layoutInflater.inflate(android.R.layout.select_dialog_item, null) // Simple for now
+        
+        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Recording Setup")
+            .setSingleChoiceItems(types, 3) { _, which ->
+                tempType = types[which]
+            }
+            .setPositiveButton("Start") { _, _ ->
+                selectedContentType = tempType
+                // For simplicity, we'll use a fixed topic or the type if no input. 
+                // A real app would have an EditText here.
+                selectedTopic = "Session on $selectedContentType"
+                requestAudioPermission.launch(Manifest.permission.RECORD_AUDIO)
+            }
+            .setNegativeButton("Cancel", null)
+
+        builder.show()
     }
 
     private fun startMediaProjectionRequest() {

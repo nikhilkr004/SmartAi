@@ -25,20 +25,23 @@ export async function generateMermaidImage(mermaidCode) {
       // 2. Wrap [label] in ["label"] and strip internal quotes/special chars
       // This fixes A[Message: "Hello"] -> A["Message: Hello"]
       l = l.replace(/\[(.*?)\]/g, (match, p1) => {
-        const safe = p1.replace(/["'?;()]/g, '').trim();
-        return `["${safe}"]`;
+        if (p1.includes('"')) {
+           const safe = p1.replace(/["]/g, '').trim();
+           return `["${safe}"]`;
+        }
+        return `["${p1.trim()}"]`;
       });
 
       // 3. Wrap {label} in {"label"}
       l = l.replace(/\{(.*?)\}/g, (match, p1) => {
-        const safe = p1.replace(/["'?;()]/g, '').trim();
+        const safe = p1.replace(/["]/g, '').trim();
         return `{"${safe}"}`;
       });
 
       // 4. Wrap (label) in ("label")
       l = l.replace(/\((.*?)\)/g, (match, p1) => {
         if (p1.includes('graph ') || p1.includes('flowchart ')) return match; // Skip header
-        const safe = p1.replace(/["'?;()]/g, '').trim();
+        const safe = p1.replace(/["]/g, '').trim();
         return `("${safe}")`;
       });
 

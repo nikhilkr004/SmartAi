@@ -37,7 +37,7 @@ class MainRepository(
         db.collection(Constants.COLLECTION_USERS).document(uid).set(payload).await()
     }
 
-    suspend fun uploadRecordingToBackend(file: File): ResponseModel {
+    suspend fun uploadRecordingToBackend(file: File, contentType: String, topic: String): ResponseModel {
         val user = auth.currentUser ?: run {
             Log.e(Constants.TAG, "UPLOAD ERROR: User not logged in!")
             throw IllegalStateException("User not logged in")
@@ -56,8 +56,10 @@ class MainRepository(
         val fileBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
         val filePart = MultipartBody.Part.createFormData("file", file.name, fileBody)
 
-        Log.d(Constants.TAG, "Calling backend /process endpoint...")
-        val resp = RetrofitClient.api.processRecording("Bearer $token", filePart)
+        Log.d(Constants.TAG, "Calling backend /process endpoint with Type: $contentType, Topic: $topic")
+        val contentTypeBody = contentType.toRequestBody("text/plain".toMediaTypeOrNull())
+        val topicBody = topic.toRequestBody("text/plain".toMediaTypeOrNull())
+        val resp = RetrofitClient.api.processRecording("Bearer $token", filePart, contentTypeBody, topicBody)
         
         if (!resp.isSuccessful) {
             val err = resp.errorBody()?.string()
@@ -74,7 +76,9 @@ class MainRepository(
         notes: String,
         pdfUrl: String,
         videoUrl: String,
-        localFilePath: String
+        localFilePath: String,
+        contentType: String,
+        topic: String
     ): String {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
         val id = UUID.randomUUID().toString()
@@ -86,6 +90,8 @@ class MainRepository(
             "pdfUrl" to pdfUrl,
             "videoUrl" to videoUrl,
             "localFilePath" to localFilePath,
+            "contentType" to contentType,
+            "topic" to topic,
             "createdAt" to FieldValue.serverTimestamp()
         )
         Log.d(Constants.TAG, "Saving result to Firestore for user: $uid")

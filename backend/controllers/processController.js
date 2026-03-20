@@ -12,8 +12,9 @@ export async function processAudio(req, res, next) {
   try {
     const userId = req.user.uid;
     const file = req.file;
+    const { contentType = "General", topic: providedTopic } = req.body;
 
-    console.log(`[PROCESS] Starting processing for User: ${userId}`);
+    console.log(`[PROCESS] Starting processing for User: ${userId} | Type: ${contentType} | Topic: ${providedTopic || 'None'}`);
 
     if (!file) {
       console.error("[PROCESS] No file received in request");
@@ -39,9 +40,8 @@ export async function processAudio(req, res, next) {
     console.log("[PROCESS] Generating structured notes and identifying visual moments...");
     const { 
       notes, 
-      mermaidCode, 
       visualTimestamps 
-    } = await generateStructuredNotes(transcript, videoFileData);
+    } = await generateStructuredNotes(transcript, videoFileData, contentType, providedTopic);
     
     // Clean up Gemini file early once AI is done with it
     if (geminiFileName) await deleteGeminiFile(geminiFileName);
@@ -58,11 +58,8 @@ export async function processAudio(req, res, next) {
       }
     }
 
-    let visualImagePaths = [];
-    if (visualTimestamps && visualTimestamps.length > 0) {
-      console.log(`[PROCESS] AI identified ${visualTimestamps.length} key visual moments. Extracting screenshots...`);
-      visualImagePaths = await extractMultipleFrames(audioPath, visualTimestamps);
-    }
+    // Screen moments extraction removed as per user request for more diagrams/hints instead.
+    const visualImagePaths = [];
 
     console.log("[PROCESS] Creating Modern PDF...");
     // Extraction: Find the first line or heading to use as the PDF topic cover
@@ -74,7 +71,7 @@ export async function processAudio(req, res, next) {
       transcript, 
       diagramBuffers, 
       visualImagePaths,
-      topic: lectureTopic
+      topic: providedTopic || lectureTopic
     });
     console.log(`[PROCESS] PDF created at: ${pdfPath}`);
 

@@ -114,7 +114,7 @@ export async function transcribeAudio(audioPath) {
   }
 }
 
-export async function generateStructuredNotes(transcript, videoFileData = null) {
+export async function generateStructuredNotes(transcript, videoFileData = null, contentType = "General", topic = null) {
   try {
     const client = getClient();
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
@@ -123,8 +123,9 @@ export async function generateStructuredNotes(transcript, videoFileData = null) 
       { text: "You are an expert tutor writing concise, punchy, and highly visual study notes for a student." },
       { text: `Below is a transcript from a classroom session: \n\n${transcript}` },
       { text: "Your goal: Identify the core 20% of content that gives 80% of the value. Keep it short!" },
+      { text: `CONTEXT: The content type is ${contentType}${topic ? ` and the topic is ${topic}` : ""}.` },
       { text: "CRITICAL VISUAL RULES:" },
-      { text: "1. DIAGRAMS: You MUST include at least THREE (3) distinct diagrams in Mermaid notation. Use ```mermaid blocks. \n" +
+      { text: "1. DIAGRAMS: You MUST include at least TWO (2) distinct diagrams in Mermaid notation. Use ```mermaid blocks. \n" +
               "   - ONLY use 'graph TD' (top-down) flowcharts. \n" +
               "   - Use ONLY '-->' for arrows. \n" +
               "   - Use simple labels like: A[Start] --> B[Process] \n" +
@@ -134,22 +135,14 @@ export async function generateStructuredNotes(transcript, videoFileData = null) 
               "   - Format Pro Tips as: [TIP: Your tip here] \n" +
               "   - Format Definitions as: [DEF: Term - Definition] \n" +
               "   These will be styled specially in the PDF." },
-      { text: "4. CODE: If code is mentioned, provide a clean snippet with a brief explanation. Everything (notes, diagrams, tips) must be in English." }
+      { text: "4. DEEP HINTS & EXAMPLES: For each core concept, provide a 'Deep Hint' or a 'Contextual Example' to aid memory. Use clear, bulleted lists." },
+      { text: `5. SPECIALIZED FORMATTING & LANGUAGE CONSISTENCY: \n` +
+              `   - If contentType is 'Coding', provide structured code blocks. \n` +
+              `   - DETECT the programming language being discussed (e.g., Java, Python, JavaScript) and stick to it. DO NOT switch between languages. \n` +
+              `   - If 'Math', use clear step-by-step logic. \n` +
+              `   - Everything must be in English.` }
     ];
 
-    if (videoFileData) {
-      promptParts.push({
-        text: "VISUAL-FIRST ANALYSIS: You have access to the full video. \n" +
-              "1. Identify the 3 most critical visual moments (slides, code, or board) and return their timestamps as [VISUAL_MOMENTS: 1.5, 10.2, ...]. \n" +
-              "2. FOR EACH TIMESTAMP: Provide a 'Visual Guide' section in your notes. Use 'Arrow Callouts' like this: \n" +
-              "- [ARROW: Top Right] This is the main variable declaration. \n" +
-              "- [ARROW: Center] Notice how the loop condition is being modified here. \n" +
-              "Make it feel like you are pointing to the screen for the student."
-      });
-      promptParts.push({
-        fileData: videoFileData
-      });
-    }
 
     const result = await model.generateContent(promptParts);
 
@@ -159,29 +152,13 @@ export async function generateStructuredNotes(transcript, videoFileData = null) 
       throw Object.assign(new Error("Gemini returned empty notes"), { statusCode: 502 });
     }
 
+    // Extraction logic: We leave Mermaid blocks IN the notes so the PDF can render them as text fallback 
+    // OR the controller can find them. We'll let the controller do the extraction for buffers.
     let cleanNotes = text;
-    let mermaidCode = null;
     let visualTimestamps = [];
 
-    // Extract Mermaid
-    const mermaidRegex = /```mermaid([\s\S]*?)```/i;
-    const mermaidMatch = cleanNotes.match(mermaidRegex);
-    if (mermaidMatch && mermaidMatch[1]) {
-      mermaidCode = mermaidMatch[1].trim();
-      cleanNotes = cleanNotes.replace(mermaidRegex, "").trim();
-    }
 
-    // Extract Visual Moments
-    const momentsRegex = /\[VISUAL_MOMENTS:\s*([\d\.,\s]+)\]/i;
-    const momentsMatch = cleanNotes.match(momentsRegex);
-    if (momentsMatch && momentsMatch[1]) {
-      visualTimestamps = momentsMatch[1].split(',')
-        .map(t => parseFloat(t.trim()))
-        .filter(t => !isNaN(t));
-      cleanNotes = cleanNotes.replace(momentsRegex, "").trim();
-    }
-
-    return { notes: cleanNotes, mermaidCode, visualTimestamps };
+    return { notes: cleanNotes };
   } catch (err) {
     console.error("[GEMINI GPT ERROR]", err);
     throw Object.assign(new Error(`Gemini notes error: ${err.message}`), { statusCode: 502 });

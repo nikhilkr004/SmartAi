@@ -53,20 +53,18 @@ function renderSmartContent(doc, text) {
   const parts = cleanBase.split(/(\[TIP:.*?\]|\[DEF:.*?\])/g);
 
   for (const part of parts) {
-    // Pagination Guard: If we are near the bottom (700+ units), start a new page
-    if (doc.y > 680) {
-      doc.addPage();
-    }
-
     if (part.startsWith("[TIP:")) {
+      if (doc.y > 650) doc.addPage();
       const content = part.replace("[TIP:", "").replace("]", "").trim();
       drawCallout(doc, "TIP", content);
     } else if (part.startsWith("[DEF:")) {
+      if (doc.y > 650) doc.addPage();
       const content = part.replace("[DEF:", "").replace("]", "").trim();
       drawCallout(doc, "DEF", content);
     } else {
       const cleanText = part.trim();
       if (cleanText) {
+        if (doc.y > 680) doc.addPage();
         doc.fillColor("#333333").font("HumanFont").fontSize(13).text(cleanText, { 
           lineGap: 4,
           align: 'justify'
@@ -123,48 +121,20 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
 
       renderSmartContent(doc, notes || "");
 
-      // --- Visual Moments Section (HERO SIZE) ---
-      if (visualImagePaths && visualImagePaths.length > 0) {
-        doc.addPage();
-        doc.rect(0, 0, doc.page.width, 100).fill("#0097A7"); // Massive Header
-        doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(26).text("Visual Summary", 54, 35);
-        doc.moveDown(4);
-
-        for (let i = 0; i < visualImagePaths.length; i++) {
-           // New page every 2 hero images (they are bigger now)
-           if (i > 0 && i % 2 === 0) {
-             doc.addPage();
-             doc.rect(0, 0, doc.page.width, 50).fill("#0097A7");
-             doc.moveDown(3);
-           }
-           
-           try {
-             doc.image(visualImagePaths[i], {
-               fit: [520, 300], // Hero size
-               align: 'center'
-             });
-             doc.moveDown(0.5);
-             doc.fillColor("#00838F").font("HumanFont-Bold").fontSize(10).text(`SCREEN MOMENT #${i+1}`, { align: "center", underline: true });
-             doc.moveDown(1.5);
-           } catch (e) {
-             console.error("[PDF] Image error:", e.message);
-           }
-        }
-      }
 
       // --- Diagrams Section (HERO SIZE) ---
       if (diagramBuffers && diagramBuffers.length > 0) {
-        doc.addPage();
-        doc.rect(0, 0, doc.page.width, 100).fill("#2E7D32"); // Forest Green Hero
-        doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(26).text("Concept Architecture", 54, 35);
-        doc.moveDown(4);
-
         for (let i = 0; i < diagramBuffers.length; i++) {
-          // Hero diagrams get 1 per page to look premium
           if (i > 0) {
             doc.addPage();
             doc.rect(0, 0, doc.page.width, 50).fill("#2E7D32");
             doc.moveDown(3);
+          } else {
+            // First diagram: Only add page if content doesn't fit or we want a fresh start
+            doc.addPage();
+            doc.rect(0, 0, doc.page.width, 100).fill("#2E7D32"); // Forest Green Hero
+            doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(26).text("Concept Architecture", 54, 35);
+            doc.moveDown(4);
           }
 
           try {
@@ -182,11 +152,13 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
       }
 
       // --- Final Transcript ---
-      doc.addPage();
-      doc.rect(0, 0, doc.page.width, 50).fill("#37474F");
-      doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(18).text("Class Transcript", 54, 16);
-      doc.moveDown(2);
-      doc.fillColor("#444444").font("HumanFont").fontSize(8).text(transcript || "", { lineGap: 1, columns: 2, columnGap: 24 });
+      if (transcript && transcript.trim().length > 0) {
+         doc.addPage();
+         doc.rect(0, 0, doc.page.width, 50).fill("#37474F");
+         doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(18).text("Class Transcript", 54, 16);
+         doc.moveDown(2);
+         doc.fillColor("#444444").font("HumanFont").fontSize(8).text(transcript || "", { lineGap: 1, columns: 2, columnGap: 24 });
+      }
 
       doc.end();
       stream.on("finish", resolve);

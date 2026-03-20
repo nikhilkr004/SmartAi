@@ -48,19 +48,21 @@ class MainViewModel(
         }
     }
 
-    fun uploadRecording(file: File) {
+    fun uploadRecording(file: File, contentType: String, topic: String) {
         viewModelScope.launch {
             try {
-                Log.d(Constants.TAG, "ViewModel: Starting upload process for ${file.name}")
+                Log.d(Constants.TAG, "ViewModel: Starting upload process for ${file.name} (Type: $contentType)")
                 _state.value = UiState.Loading
-                val response = repo.uploadRecordingToBackend(file)
+                val response = repo.uploadRecordingToBackend(file, contentType, topic)
                 Log.d(Constants.TAG, "ViewModel: Backend processing complete. Saving result...")
                 val recordingId = repo.saveRecordingResult(
                     transcript = response.transcript,
                     notes = response.notes,
                     pdfUrl = response.pdfUrl,
                     videoUrl = response.videoUrl,
-                    localFilePath = file.absolutePath
+                    localFilePath = file.absolutePath,
+                    contentType = contentType,
+                    topic = topic
                 )
                 Log.i(Constants.TAG, "ViewModel: Full flow successful.")
                 _state.value = UiState.UploadSuccess(response, recordingId)

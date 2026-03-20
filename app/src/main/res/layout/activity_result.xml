@@ -206,6 +206,66 @@
                         android:textSize="14sp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+            
+            <!-- Code Snippets Section (Dynamic) -->
+            <LinearLayout
+                android:id="@+id/layoutCodeSnippets"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Code Snippets"
+                        android:textColor="@color/text_main"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnCopyCode"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:text="COPY"
+                        android:textColor="@color/primary_teal"
+                        android:textSize="12sp"
+                        app:icon="@android:drawable/ic_menu_edit"
+                        app:iconSize="16dp"
+                        app:iconTint="@color/primary_teal" />
+                </RelativeLayout>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="#1E1E1E"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:id="@+id/tvCodeContent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="monospace"
+                            android:text="// Loading code..."
+                            android:textColor="#D4D4D4"
+                            android:textSize="13sp" />
+                    </HorizontalScrollView>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
 
             <!-- Quick Tip -->
             <LinearLayout

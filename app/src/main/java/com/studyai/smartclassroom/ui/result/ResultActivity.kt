@@ -30,9 +30,10 @@ class ResultActivity : AppCompatActivity() {
         val transcriptExtra = intent.getStringExtra(Constants.EXTRA_TRANSCRIPT).orEmpty()
         val notesExtra = intent.getStringExtra(Constants.EXTRA_NOTES).orEmpty()
         val pdfUrlExtra = intent.getStringExtra(Constants.EXTRA_PDF_URL).orEmpty()
+        val contentTypeExtra = intent.getStringExtra(Constants.EXTRA_CONTENT_TYPE).orEmpty()
 
         if (transcriptExtra.isNotBlank() || notesExtra.isNotBlank() || pdfUrlExtra.isNotBlank()) {
-            bindContent(transcriptExtra, notesExtra, pdfUrlExtra)
+            bindContent(transcriptExtra, notesExtra, pdfUrlExtra, contentTypeExtra)
             // Auto-open PDF if it's newly generated (passed via extras)
             if (pdfUrlExtra.isNotBlank()) {
                 val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrlExtra))
@@ -57,10 +58,32 @@ class ResultActivity : AppCompatActivity() {
         }
     }
 
-    private fun bindContent(transcript: String, notes: String, pdfUrl: String) {
+    private fun bindContent(transcript: String, notes: String, pdfUrl: String, contentType: String = "") {
         binding.tvTranscript.text = transcript
         binding.tvNotes.text = notes
         binding.btnOpenPdf.tag = pdfUrl
+        
+        // Handle specialized content (Coding)
+        if (contentType.equals("Coding", ignoreCase = true) || notes.contains("```")) {
+            binding.layoutCodeSnippets.visibility = View.VISIBLE
+            // Extract code blocks from notes
+            val codeRegex = "```(?:[a-zA-Z]+)?\\n([\\s\\S]*?)```".toRegex()
+            val match = codeRegex.find(notes)
+            if (match != null) {
+                val code = match.groupValues[1].trim()
+                binding.tvCodeContent.text = code
+                binding.btnCopyCode.setOnClickListener {
+                    val clipboard = getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    val clip = android.content.ClipData.newPlainText("StudyAi Code", code)
+                    clipboard.setPrimaryClip(clip)
+                    Toast.makeText(this, "Code copied to clipboard", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                 binding.layoutCodeSnippets.visibility = View.GONE
+            }
+        } else {
+            binding.layoutCodeSnippets.visibility = View.GONE
+        }
         
         // Optional: Extract a title from the notes or just use a default
         if (notes.lines().isNotEmpty()) {
@@ -82,7 +105,8 @@ class ResultActivity : AppCompatActivity() {
                 val transcript = data["transcript"]?.toString().orEmpty()
                 val notes = data["notes"]?.toString().orEmpty()
                 val pdfUrl = data["pdfUrl"]?.toString().orEmpty()
-                bindContent(transcript, notes, pdfUrl)
+                val contentType = data["contentType"]?.toString().orEmpty()
+                bindContent(transcript, notes, pdfUrl, contentType)
             } catch (e: Exception) {
                 Toast.makeText(this@ResultActivity, e.message ?: "Failed to load", Toast.LENGTH_LONG).show()
                 finish()

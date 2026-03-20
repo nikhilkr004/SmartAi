@@ -15,6 +15,8 @@ object Constants {
     const val EXTRA_NOTES = "extra_notes"
     const val EXTRA_PDF_URL = "extra_pdf_url"
     const val EXTRA_RECORDING_ID = "extra_recording_id"
+    const val EXTRA_CONTENT_TYPE = "extra_content_type"
+    const val EXTRA_TOPIC = "extra_topic"
 
     // Screen recording service actions
     const val ACTION_START_RECORDING = "action_start_recording"
