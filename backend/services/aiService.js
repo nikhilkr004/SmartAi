@@ -120,6 +120,7 @@ export async function generateStructuredNotes(transcript) {
       "- Explain complex rules or topics simply as if you were talking to a friend.",
       "- Organize the notes logically using headers and bullet points so it is easy to read.",
       "- Provide specific examples that the teacher used.",
+      "- CREATE A DIAGRAM: You MUST include exactly ONE visual aid in the form of Mermaid.js code (like a concept mindmap or flowchart of the main ideas). Wrap the code EXACTLY inside ```mermaid and ``` tags. Do not wrap it in anything else.",
       "- Keep the original language (if Hindi was spoken, write the concepts out conversationally in Hindi/English).",
       "",
       "TRANSCRIPT:",
@@ -131,12 +132,24 @@ export async function generateStructuredNotes(transcript) {
       { text: prompt }
     ]);
 
-    const notes = result.response.text()?.trim();
-    if (!notes) {
+    const text = result.response.text()?.trim();
+    if (!text) {
       console.error("[GEMINI] Model returned empty notes.");
       throw Object.assign(new Error("Gemini returned empty notes"), { statusCode: 502 });
     }
-    return notes;
+
+    let cleanNotes = text;
+    let mermaidCode = null;
+    const mermaidRegex = /```mermaid([\s\S]*?)```/i;
+    const match = cleanNotes.match(mermaidRegex);
+    
+    if (match && match[1]) {
+      mermaidCode = match[1].trim();
+      // Strip raw code block from the final readable notes
+      cleanNotes = cleanNotes.replace(mermaidRegex, "").trim();
+    }
+
+    return { notes: cleanNotes, mermaidCode };
   } catch (err) {
     console.error("[GEMINI GPT ERROR]", err);
     throw Object.assign(new Error(`Gemini notes error: ${err.message}`), { statusCode: 502 });

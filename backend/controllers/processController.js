@@ -2,6 +2,7 @@ import { transcribeAudio, generateStructuredNotes } from "../services/aiService.
 import { createNotesPdf } from "../services/pdfService.js";
 import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseService.js";
 import { safeUnlink } from "../utils/fileHelper.js";
+import { generateMermaidImage } from "../utils/mermaidHelper.js";
 
 export async function processAudio(req, res, next) {
   let audioPath;
@@ -31,11 +32,17 @@ export async function processAudio(req, res, next) {
     console.log("[PROCESS] Transcription complete.");
 
     console.log("[PROCESS] Generating structured notes with AI...");
-    const notes = await generateStructuredNotes(transcript);
+    const { notes, mermaidCode } = await generateStructuredNotes(transcript);
     console.log("[PROCESS] Notes generated.");
 
+    let diagramBuffer = null;
+    if (mermaidCode) {
+      console.log("[PROCESS] Visual Diagram Code found. Fetching rendering from QuickChart...");
+      diagramBuffer = await generateMermaidImage(mermaidCode);
+    }
+
     console.log("[PROCESS] Creating PDF...");
-    pdfPath = await createNotesPdf({ notes, transcript });
+    pdfPath = await createNotesPdf({ notes, transcript, diagramBuffer });
     console.log(`[PROCESS] PDF created at: ${pdfPath}`);
 
     console.log("[PROCESS] Uploading PDF to Firebase Storage...");

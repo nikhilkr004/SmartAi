@@ -16,7 +16,7 @@ function addSection(doc, title, body) {
   doc.font("HumanFont").fontSize(14).text(body, { lineGap: 4 });
 }
 
-export async function createNotesPdf({ notes, transcript }) {
+export async function createNotesPdf({ notes, transcript, diagramBuffer }) {
   try {
     const tmpDir = getTmpDir();
     await ensureDir(tmpDir);
@@ -44,6 +44,24 @@ export async function createNotesPdf({ notes, transcript }) {
       doc.moveDown(1);
 
       addSection(doc, "Notes", notes || "");
+
+      // Embed visual diagram immediately underneath the notes section
+      if (diagramBuffer) {
+        try {
+          doc.moveDown(1.5);
+          doc.font("HumanFont-Bold").fontSize(18).text("Visual Concept Diagram", { align: "center" });
+          doc.moveDown(0.5);
+          doc.image(diagramBuffer, {
+             fit: [450, 450],
+             align: 'center',
+             valign: 'center'
+          });
+          doc.moveDown(1);
+        } catch (imgError) {
+          console.error("[PDF] Failed to embed Mermaid image buffer:", imgError.message);
+        }
+      }
+
       doc.addPage();
       addSection(doc, "Transcript", transcript || "");
 
