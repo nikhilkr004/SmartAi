@@ -7,9 +7,9 @@ import { ensureDir, getTmpDir } from "../utils/fileHelper.js";
 
 function addSection(doc, title, body) {
   doc.moveDown(0.5);
-  doc.font("Helvetica-Bold").fontSize(14).text(title);
+  doc.font("Times-Bold").fontSize(14).text(title);
   doc.moveDown(0.3);
-  doc.font("Helvetica").fontSize(11).text(body, { lineGap: 3 });
+  doc.font("Times-Roman").fontSize(12).text(body, { lineGap: 4 });
 }
 
 export async function createNotesPdf({ notes, transcript }) {
@@ -30,7 +30,7 @@ export async function createNotesPdf({ notes, transcript }) {
       const stream = fs.createWriteStream(pdfPath);
       doc.pipe(stream);
 
-      doc.font("Helvetica-Bold").fontSize(20).text("Smart Classroom Assistant Notes", { align: "center" });
+      doc.font("Times-Bold").fontSize(22).text("Smart Classroom Assistant Notes", { align: "center" });
       doc.moveDown(1);
 
       addSection(doc, "Notes", notes || "");

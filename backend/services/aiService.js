@@ -110,29 +110,24 @@ export async function generateStructuredNotes(transcript) {
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = [
-      "You are a professional educational assistant.",
-      "Below is a transcript from a classroom session.",
-      "Please transform this transcript into highly structured, comprehensive, and easy-to-read student notes.",
+      "You are a friendly, human-like educational assistant.",
+      "Below is a transcript from a classroom session or video.",
+      "Please transform this transcript into beautifully written, conversational student notes that feel like they were written by a smart classmate.",
       "",
       "IMPORTANT INSTRUCTIONS:",
       "- Maintain the original language of the discussion (e.g., if the transcript is in Hindi or Hinglish, keep the notes in that style).",
-      "- Use a professional tone.",
-      "- Organize with clear, bold headers.",
-      "",
-      "STRUCTURE:",
-      "1. **Lecture Title**: (Create a concise, relevant title)",
-      "2. **Executive Summary**: (2-3 sentences max)",
-      "3. **Key Concepts & Definitions**: (List all important terms discussed)",
-      "4. **Examples & Illustrations**: (Detailed examples provided by the teacher)",
-      "5. **Action Items / Homework**: (Any tasks mentioned)",
-      "6. **Short Quiz**: (5 multiple choice or fill-in-the-blank questions with answers)",
+      "- Write in a very natural, human, conversational tone.",
+      "- Summarize what actually happened in the video/audio.",
+      "- Highlight key takeaways naturally, using bullet points only where it makes sense.",
+      "- Explain things simply as if you were talking to a friend.",
+      "- If the transcript is mostly silent or empty, kindly mention that there wasn't much spoken content in the video.",
       "",
       "TRANSCRIPT:",
       transcript
     ].join("\n");
 
     const result = await model.generateContent([
-      { text: "You are a master at taking notes from classroom lectures. You produce detailed, structured, and helpful student resources in the lecture's primary language." },
+      { text: "You are a friendly note-taker. You write very human, conversational summaries and notes of everything spoken." },
       { text: prompt }
     ]);
 
