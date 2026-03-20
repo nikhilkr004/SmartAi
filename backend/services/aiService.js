@@ -41,13 +41,26 @@ export async function transcribeAudio(audioPath) {
     else if (ext === ".m4a") mimeType = "audio/m4a";
     else if (ext === ".ogg") mimeType = "audio/ogg";
     else if (ext === ".webm") mimeType = "audio/webm";
+    else if (ext === ".mp4") mimeType = "video/mp4";
 
     uploadResult = await fileManager.uploadFile(audioPath, {
       mimeType: mimeType,
       displayName: path.basename(audioPath),
     });
     
-    console.log(`[GEMINI] Upload successful. URI: ${uploadResult.file.uri}`);
+    console.log(`[GEMINI] Upload successful. URI: ${uploadResult.file.uri}. Waiting for processing...`);
+
+    // Wait for the file to finish processing (crucial for video/mp4 files)
+    let fileState = await fileManager.getFile(uploadResult.file.name);
+    while (fileState.state === "PROCESSING") {
+      console.log(`[GEMINI] File processing... waiting 3 seconds.`);
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      fileState = await fileManager.getFile(uploadResult.file.name);
+    }
+    
+    if (fileState.state === "FAILED") {
+      throw Object.assign(new Error("Gemini failed to process the media file."), { statusCode: 502 });
+    }
 
     const client = getClient();
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
