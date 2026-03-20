@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.firestore.FirebaseFirestore
 import com.studyai.smartclassroom.databinding.ActivityResultBinding
+import com.studyai.smartclassroom.ui.pdf.PdfViewerActivity
 import com.studyai.smartclassroom.utils.Constants
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.launch
@@ -37,8 +38,11 @@ class ResultActivity : AppCompatActivity() {
             bindContent(transcriptExtra, notesExtra, pdfUrlExtra, contentTypeExtra, topicExtra)
             // Auto-open PDF if it's newly generated (passed via extras)
             if (pdfUrlExtra.isNotBlank()) {
-                val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(pdfUrlExtra))
-                startActivity(browserIntent)
+                val intent = Intent(this, PdfViewerActivity::class.java).apply {
+                    putExtra(Constants.EXTRA_PDF_URL, pdfUrlExtra)
+                    putExtra(Constants.EXTRA_TOPIC, topicExtra)
+                }
+                startActivity(intent)
             }
         } else if (recordingId.isNotBlank()) {
             loadFromFirestore(recordingId)
