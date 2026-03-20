@@ -140,6 +140,10 @@ class DashboardActivity : AppCompatActivity() {
             startActivity(Intent(this, com.studyai.smartclassroom.ui.profile.ProfileActivity::class.java))
         }
 
+        binding.btnNavLibrary.setOnClickListener {
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.library.LibraryActivity::class.java))
+        }
+
         // Collect VM state.
         lifecycleScope.launch {
             vm.state.collectLatest { state ->

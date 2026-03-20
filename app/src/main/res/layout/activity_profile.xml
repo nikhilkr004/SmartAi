@@ -1,28 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F7F9"
-    android:orientation="vertical">
+    android:background="@drawable/bg_profile_gradient"
+    android:fitsSystemWindows="true">
 
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#102027">
+        android:background="@android:color/transparent"
+        app:elevation="0dp">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             app:navigationIcon="@drawable/ic_back"
-            app:title="My Profile"
-            app:titleTextColor="@color/white" />
+            app:title="Profile"
+            app:titleTextColor="#102027" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <ScrollView
+    <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -30,93 +33,167 @@
             android:orientation="vertical"
             android:padding="24dp">
 
-            <!-- Profile Header Card -->
+            <!-- Profile Card -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="4dp">
+                app:cardBackgroundColor="@color/white"
+                app:cardCornerRadius="32dp"
+                app:cardElevation="8dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:orientation="vertical"
-                    android:padding="32dp">
+                    android:paddingVertical="40dp">
 
                     <com.google.android.material.imageview.ShapeableImageView
                         android:id="@+id/ivAvatar"
-                        android:layout_width="100dp"
-                        android:layout_height="100dp"
-                        android:background="#E0F7FA"
-                        android:padding="20dp"
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:background="#FFE0B2"
+                        android:padding="24dp"
                         android:src="@drawable/ic_profile"
                         app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.LargeComponent"
-                        app:tint="#006064" />
+                        app:tint="#BF360C" />
 
                     <TextView
                         android:id="@+id/tvUserName"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="Student Name"
+                        android:layout_marginTop="20dp"
+                        android:text="Mr. Nikhil Kumar"
                         android:textColor="#102027"
-                        android:textSize="22sp"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvUserId"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:background="@drawable/bg_badge_id"
+                        android:paddingHorizontal="16dp"
+                        android:paddingVertical="4dp"
+                        android:text="ID: 25SCS1003004185"
+                        android:textColor="@color/primary_teal"
+                        android:textSize="12sp"
                         android:textStyle="bold" />
 
                     <TextView
                         android:id="@+id/tvUserEmail"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="student@studyai.com"
+                        android:layout_marginTop="8dp"
+                        android:text="nikhil.kumar@university.edu"
                         android:textColor="#546E7A"
                         android:textSize="14sp" />
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Favorites Section -->
-            <TextView
-                android:layout_width="wrap_content"
+            <!-- Favorites Preview -->
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="32dp"
-                android:text="FAVORITE STUDY GUIDES"
-                android:textColor="#006064"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="32dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Favorite Study Guides"
+                    android:textColor="#102027"
+                    android:textSize="18sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/btnSeeAllFavorites"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:text="See All"
+                    android:textColor="@color/primary_teal"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </RelativeLayout>
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recyclerFavorites"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:nestedScrollingEnabled="false" />
+                android:layout_marginTop="16dp"
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_history" />
 
-            <!-- Empty State for Favorites -->
+            <!-- App Settings -->
             <TextView
-                android:id="@+id/tvEmptyFavorites"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="App Settings"
+                android:textColor="#102027"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="40dp"
-                android:gravity="center"
-                android:text="No favorites yet. Star your best sessions!"
-                android:textColor="#90A4AE"
-                android:visibility="gone" />
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_rounded_card"
+                android:orientation="vertical"
+                android:elevation="2dp"
+                android:padding="8dp">
 
-            <!-- Actions -->
+                <include layout="@layout/item_settings_row" android:id="@+id/rowAccount" />
+                <include layout="@layout/item_settings_row" android:id="@+id/rowNotifications" />
+                <include layout="@layout/item_settings_row" android:id="@+id/rowStorage" />
+                <include layout="@layout/item_settings_row" android:id="@+id/rowPrivacy" />
+
+            </LinearLayout>
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnLogout"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
+                android:layout_height="64dp"
                 android:layout_marginTop="40dp"
+                android:backgroundTint="#FFEBEE"
                 android:text="LOG OUT"
                 android:textColor="#D32F2F"
-                app:cornerRadius="16dp"
-                app:strokeColor="#D32F2F" />
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="20dp"
+                app:icon="@drawable/ic_logout"
+                app:iconGravity="textStart"
+                app:iconTint="#D32F2F" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:gravity="center"
+                android:text="Version 2.0.4 [Beta]"
+                android:textColor="#90A4AE"
+                android:textSize="12sp" />
+
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="100dp" />
 
         </LinearLayout>
-    </ScrollView>
+    </androidx.core.widget.NestedScrollView>
 
-</LinearLayout>
+    <!-- Bottom Nav Wrapper -->
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:layout_gravity="bottom"
+        android:layout_margin="16dp"
+        app:cardBackgroundColor="@color/white"
+        app:cardCornerRadius="32dp"
+        app:cardElevation="8dp">
+
+        <include layout="@layout/layout_bottom_nav" />
+    </com.google.android.material.card.MaterialCardView>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
