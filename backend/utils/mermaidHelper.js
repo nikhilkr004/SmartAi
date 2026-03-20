@@ -1,55 +1,9 @@
 import axios from "axios";
-import zlib from "zlib";
 
 /**
- * Standard Kroki encoding: Zlib Deflate -> Base64 -> URL Safe
- */
-function encodeKroki(content) {
-  const buffer = Buffer.from(content, 'utf8');
-  const compressed = zlib.deflateSync(buffer, { level: 9 });
-  return compressed.toString('base64')
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_');
-}
-
-/**
- * Fetches a rendered D2 diagram image from Kroki.
- */
-export async function generateD2Image(d2Code) {
-  if (!d2Code) return null;
-  const cleanCode = d2Code
-    .replace(/```d2/g, "")
-    .replace(/```/g, "")
-    .trim();
-
-  if (!cleanCode) return null;
-
-  // --- AUTOMATED D2 SANITIZATION ---
-  const sanitizedCode = cleanCode.split('\n').map(line => {
-    // Only wrap in quotes if there are spaces and no quotes already
-    if (line.includes('->') && !line.includes('"')) {
-      return line.split('->').map(part => `"${part.trim()}"`).join(' -> ');
-    }
-    return line;
-  }).join('\n');
-
-  try {
-    const encoded = encodeKroki(sanitizedCode);
-    const url = `https://kroki.io/d2/svg/${encoded}`;
-    
-    console.log("[D2] Requesting diagram image from Kroki (GET/Zlib)...");
-    const response = await axios.get(url, { responseType: "arraybuffer", timeout: 15000 });
-    
-    console.log("[D2] Successfully generated D2 image!");
-    return Buffer.from(response.data);
-  } catch (error) {
-    console.error("[D2 ERROR] Rendering failed:", error.response?.status || error.message);
-    return null;
-  }
-}
-
-/**
- * Fetches a rendered Mermaid diagram image with multiple fallbacks.
+ * Fetches a rendered Mermaid diagram image from QuickChart (Highly Stable).
+ * @param {string} mermaidCode - The raw Mermaid syntax string.
+ * @returns {Promise<Buffer|null>} - The binary image buffer, or null if it fails.
  */
 export async function generateMermaidImage(mermaidCode) {
   if (!mermaidCode) return null;
@@ -61,22 +15,35 @@ export async function generateMermaidImage(mermaidCode) {
   if (!cleanCode) return null;
 
   try {
-    const encoded = encodeKroki(cleanCode);
-    const url = `https://kroki.io/mermaid/svg/${encoded}`;
+    console.log("[MERMAID] Requesting diagram image from QuickChart...");
+    // QuickChart is very robust for standard Mermaid
+    const url = `https://quickchart.io/mermaid?graph=${encodeURIComponent(cleanCode)}&width=800`;
     
-    console.log("[MERMAID] Requesting diagram image from Kroki (GET/Zlib)...");
-    const response = await axios.get(url, { responseType: "arraybuffer", timeout: 10000 });
+    const response = await axios.get(url, { responseType: "arraybuffer", timeout: 12000 });
+    console.log("[MERMAID] Successfully generated image!");
     return Buffer.from(response.data);
   } catch (error) {
-    console.warn("[MERMAID] Kroki failed, trying QuickChart fallback...", error.message);
+    console.warn("[MERMAID] QuickChart failed, trying Mermaid.ink fallback...", error.message);
     
     try {
-      const qcUrl = `https://quickchart.io/mermaid?graph=${encodeURIComponent(cleanCode)}&width=800`;
-      const response = await axios.get(qcUrl, { responseType: "arraybuffer", timeout: 8000 });
-      return Buffer.from(response.data);
-    } catch (fallbackError) {
-      console.error("[MERMAID ERROR] All fallbacks failed.");
+      const b64 = Buffer.from(cleanCode).toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+      const inkUrl = `https://mermaid.ink/img/${b64}`;
+      const inkResponse = await axios.get(inkUrl, { responseType: "arraybuffer", timeout: 10000 });
+      return Buffer.from(inkResponse.data);
+    } catch (inkError) {
+      console.error("[MERMAID ERROR] All diagram fallbacks failed.");
       return null;
     }
   }
+}
+
+/**
+ * Legacy support for D2 call (now aliases to Mermaid for stability)
+ */
+export async function generateD2Image(code) {
+  console.log("[D2/STABLE] Routing D2-style request to Mermaid for stability...");
+  return generateMermaidImage(code);
 }
