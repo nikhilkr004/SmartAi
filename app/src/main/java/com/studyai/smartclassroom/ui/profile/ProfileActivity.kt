@@ -95,8 +95,6 @@ class ProfileActivity : AppCompatActivity() {
                 val snapshot = db.collection("recordings")
                     .whereEqualTo("userId", userId)
                     .whereEqualTo("isFavorite", true)
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
-                    .limit(2) // Just a preview
                     .get()
                     .await()
 
@@ -104,7 +102,8 @@ class ProfileActivity : AppCompatActivity() {
                     val data = doc.data?.toMutableMap() ?: mutableMapOf()
                     data["id"] = doc.id
                     data
-                }
+                }.sortedByDescending { it["timestamp"] as? com.google.firebase.Timestamp }
+                .take(2)
                 
                 favoritesAdapter.submit(items)
             } catch (e: Exception) {

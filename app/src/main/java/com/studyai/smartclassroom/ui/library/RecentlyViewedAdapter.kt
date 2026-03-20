@@ -43,8 +43,16 @@ class RecentlyViewedAdapter(
             
             val timeStr = timestamp?.let { 
                 val diff = Date().time - it.toDate().time
-                val hours = diff / (1000 * 60 * 60)
-                if (hours < 1) "JUST NOW" else "${hours}H AGO"
+                val minutes = diff / (1000 * 60)
+                val hours = minutes / 60
+                val days = hours / 24
+                
+                when {
+                    minutes < 1 -> "JUST NOW"
+                    minutes < 60 -> "${minutes}M AGO"
+                    hours < 24 -> "${hours}H AGO"
+                    else -> "${days}D AGO"
+                }
             } ?: ""
             
             binding.tvRecentMeta.text = "${category.uppercase()} • $timeStr"

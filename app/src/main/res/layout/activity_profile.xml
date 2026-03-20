@@ -48,21 +48,20 @@
                     android:orientation="vertical"
                     android:paddingVertical="40dp">
 
-                    <com.google.android.material.imageview.ShapeableImageView
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        xmlns:app="http://schemas.android.com/apk/res-auto"
                         android:id="@+id/ivAvatar"
-                        android:layout_width="120dp"
-                        android:layout_height="120dp"
-                        android:background="#FFE0B2"
-                        android:padding="24dp"
-                        android:src="@drawable/ic_profile"
-                        app:shapeAppearanceOverlay="@style/ShapeAppearance.MaterialComponents.LargeComponent"
-                        app:tint="#BF360C" />
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:src="@drawable/ic_settings_account"
+                        app:civ_border_color="#FF000000"/>
 
                     <TextView
                         android:id="@+id/tvUserName"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="20dp"
+                        android:textAlignment="center"
                         android:text="Mr. Nikhil Kumar"
                         android:textColor="#102027"
                         android:textSize="24sp"
@@ -76,6 +75,7 @@
                         android:background="@drawable/bg_badge_id"
                         android:paddingHorizontal="16dp"
                         android:paddingVertical="4dp"
+                        android:visibility="gone"
                         android:text="ID: 25SCS1003004185"
                         android:textColor="@color/primary_teal"
                         android:textSize="12sp"

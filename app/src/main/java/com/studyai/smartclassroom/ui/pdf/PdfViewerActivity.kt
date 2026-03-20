@@ -35,10 +35,24 @@ class PdfViewerActivity : AppCompatActivity() {
         binding = ActivityPdfViewerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        pdfUrl = intent.getStringExtra(Constants.EXTRA_PDF_URL).orEmpty()
-        val topic = intent.getStringExtra(Constants.EXTRA_TOPIC) ?: "Study Notes"
-        
-        binding.tvTitle.text = topic
+        val pdfUrl = intent.getStringExtra(Constants.EXTRA_PDF_URL)
+        val topic = intent.getStringExtra(Constants.EXTRA_TOPIC)
+        val recordingId = intent.getStringExtra(Constants.EXTRA_RECORDING_ID)
+
+        if (pdfUrl == null) {
+            Toast.makeText(this, "Error: PDF URL not provided", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+        this.pdfUrl = pdfUrl // Update the class-level pdfUrl
+
+        // Track opening
+        recordingId?.let { id ->
+            FirebaseFirestore.getInstance().collection("recordings").document(id)
+                .update("lastOpened", Timestamp.now())
+        }
+
+        binding.tvTitle.text = topic ?: "Study Guide"
         binding.toolbar.setNavigationOnClickListener { finish() }
 
         // Handle edge-to-edge

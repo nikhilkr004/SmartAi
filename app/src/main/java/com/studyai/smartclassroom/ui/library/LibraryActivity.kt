@@ -74,7 +74,6 @@ class LibraryActivity : AppCompatActivity() {
                 val favSnapshot = db.collection("recordings")
                     .whereEqualTo("userId", userId)
                     .whereEqualTo("isFavorite", true)
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
                     .get()
                     .await()
 
@@ -82,13 +81,14 @@ class LibraryActivity : AppCompatActivity() {
                     val data = doc.data?.toMutableMap() ?: mutableMapOf()
                     data["id"] = doc.id
                     data
-                }
+                }.sortedByDescending { it["timestamp"] as? com.google.firebase.Timestamp }
+                
                 favoritesAdapter.submit(favItems)
 
                 // Fetch Recent for the top carousel (e.g. last 5)
                 val recentSnapshot = db.collection("recordings")
                     .whereEqualTo("userId", userId)
-                    .orderBy("timestamp", Query.Direction.DESCENDING)
+                    .orderBy("lastOpened", Query.Direction.DESCENDING)
                     .limit(5)
                     .get()
                     .await()
