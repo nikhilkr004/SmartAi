@@ -2,7 +2,7 @@ import { transcribeAudio, generateStructuredNotes, deleteGeminiFile } from "../s
 import { createNotesPdf } from "../services/pdfService.js";
 import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseService.js";
 import { safeUnlink } from "../utils/fileHelper.js";
-import { generateMermaidImage } from "../utils/mermaidHelper.js";
+import { generateD2Image, generateMermaidImage } from "../utils/mermaidHelper.js";
 import { extractMultipleFrames } from "../utils/visualHelper.js";
 
 export async function processAudio(req, res, next) {
@@ -47,12 +47,20 @@ export async function processAudio(req, res, next) {
     if (geminiFileName) await deleteGeminiFile(geminiFileName);
 
     const diagramBuffers = [];
+    // Priority 1: D2 blocks
+    const d2Regex = /```d2\s*([\s\S]*?)```/g;
+    while ((match = d2Regex.exec(notes)) !== null) {
+      const code = match[1].trim();
+      if (code) {
+        const buffer = await generateD2Image(code);
+        if (buffer) diagramBuffers.push(buffer);
+      }
+    }
+    // Priority 2: Mermaid fallback blocks
     const mermaidRegex = /```mermaid\s*([\s\S]*?)```/g;
-    let match;
     while ((match = mermaidRegex.exec(notes)) !== null) {
       const code = match[1].trim();
       if (code) {
-        console.log("[PROCESS] Rendering Mermaid diagram block...");
         const buffer = await generateMermaidImage(code);
         if (buffer) diagramBuffers.push(buffer);
       }
