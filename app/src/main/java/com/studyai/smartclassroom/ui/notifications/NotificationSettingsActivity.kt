@@ -60,12 +60,7 @@ class NotificationSettingsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val doc = db.collection("users").document(userId).get().await()
-                val name = doc.getString("displayName") ?: "Aero Crystal"
-                binding.tvUserName.text = name
-                
-                // Set avatar if exists
-                // val avatarUrl = doc.getString("profileImageUrl")
-                // if (!avatarUrl.isNullOrEmpty()) { Glide.with(this).load(avatarUrl).into(binding.ivUserAvatar) }
+                // References were removed from layout
             } catch (e: Exception) { e.printStackTrace() }
         }
     }
