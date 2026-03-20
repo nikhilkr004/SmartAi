@@ -24,6 +24,11 @@ import com.studyai.smartclassroom.ui.pdf.PdfViewerActivity
 import com.studyai.smartclassroom.ui.dashboard.DashboardActivity
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import android.content.res.ColorStateList
+import android.graphics.Color
+import android.util.TypedValue
+import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.studyai.smartclassroom.databinding.LayoutProUpgradeDialogBinding
 
 class ProfileActivity : AppCompatActivity() {
 
@@ -194,5 +199,44 @@ class ProfileActivity : AppCompatActivity() {
                 }
             } catch (e: Exception) { }
         }
+    }
+
+    private fun showProUpgradeDialog() {
+        val dialog = BottomSheetDialog(this, R.style.TransparentBottomSheetDialog)
+        val dialogBinding = LayoutProUpgradeDialogBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.planMonthly.setOnClickListener {
+            dialogBinding.planMonthly.strokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics).toInt()
+            dialogBinding.planMonthly.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#008080")))
+            dialogBinding.planMonthly.setCardBackgroundColor(Color.parseColor("#F1F8F9"))
+
+            dialogBinding.planYearly.strokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics).toInt()
+            dialogBinding.planYearly.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#EEF2F5")))
+            dialogBinding.planYearly.setCardBackgroundColor(Color.parseColor("#F8F9FA"))
+        }
+
+        dialogBinding.planYearly.setOnClickListener {
+            dialogBinding.planYearly.strokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 2f, resources.displayMetrics).toInt()
+            dialogBinding.planYearly.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#008080")))
+            dialogBinding.planYearly.setCardBackgroundColor(Color.parseColor("#F1F8F9"))
+
+            dialogBinding.planMonthly.strokeWidth = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 1f, resources.displayMetrics).toInt()
+            dialogBinding.planMonthly.setStrokeColor(ColorStateList.valueOf(Color.parseColor("#EEF2F5")))
+            dialogBinding.planMonthly.setCardBackgroundColor(Color.parseColor("#F8F9FA"))
+        }
+
+        dialogBinding.btnUpgradeNow.setOnClickListener {
+            val userId = auth.currentUser?.uid ?: return@setOnClickListener
+            db.collection("users").document(userId).update(mapOf("planType" to "pro", "limit" to null))
+                .addOnSuccessListener {
+                    dialog.dismiss()
+                    Toast.makeText(this, "Welcome to Aero Pro! 🚀", Toast.LENGTH_LONG).show()
+                    loadUserData() // Refresh UI
+                }
+        }
+
+        dialogBinding.btnMaybeLater.setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
 }
