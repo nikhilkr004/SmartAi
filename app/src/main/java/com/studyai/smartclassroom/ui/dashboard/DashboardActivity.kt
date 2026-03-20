@@ -8,8 +8,9 @@ import android.content.IntentFilter
 import android.media.projection.MediaProjectionManager
 import android.os.Bundle
 import android.util.Log
+import android.graphics.Color
 import android.view.View
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -235,41 +236,71 @@ class DashboardActivity : AppCompatActivity() {
     private fun showRecordingSetupDialog() {
         val types = arrayOf("Coding", "Math", "Aptitude", "General")
         var tempType = "General"
-        
-        // Dynamic layout for dialog with EditText
-        val layout = android.widget.LinearLayout(this).apply {
-            orientation = android.widget.LinearLayout.VERTICAL
-            setPadding(60, 40, 60, 0)
-        }
 
-        val etTopic = android.widget.EditText(this).apply {
-            hint = "Enter Topic (e.g. Java Loops)"
-            setText("Session on ${types[3]}")
-        }
-        layout.addView(etTopic)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_recording_setup, null)
+        val etTopic = dialogView.findViewById<EditText>(R.id.etSessionName)
+        val btnStart = dialogView.findViewById<View>(R.id.btnStart)
+        val btnCancel = dialogView.findViewById<View>(R.id.btnCancel)
 
-        val builder = androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Recording Setup")
-            .setView(layout)
-            .setSingleChoiceItems(types, 3) { _, which ->
-                tempType = types[which]
-                if (etTopic.text.toString().startsWith("Session on")) {
-                    etTopic.setText("Session on ${types[which]}")
-                }
+        // Type Buttons
+        val btnCoding = dialogView.findViewById<LinearLayout>(R.id.btnTypeCoding)
+        val btnMath = dialogView.findViewById<LinearLayout>(R.id.btnTypeMath)
+        val btnAptitude = dialogView.findViewById<LinearLayout>(R.id.btnTypeAptitude)
+        val btnGeneral = dialogView.findViewById<LinearLayout>(R.id.btnTypeGeneral)
+
+        val typeButtons = mapOf(
+            "Coding" to btnCoding,
+            "Math" to btnMath,
+            "Aptitude" to btnAptitude,
+            "General" to btnGeneral
+        )
+
+        etTopic.setText("Session on General")
+
+        fun updateSelection(selected: String) {
+            tempType = selected
+            if (etTopic.text.toString().startsWith("Session on")) {
+                etTopic.setText("Session on $selected")
             }
-            .setPositiveButton("Start") { _, _ ->
-                selectedContentType = tempType
-                selectedTopic = etTopic.text.toString().ifBlank { "Session on $selectedContentType" }
+
+            typeButtons.forEach { (type, view) ->
+                val isSelected = type == selected
+                view.setBackgroundResource(if (isSelected) R.drawable.bg_type_selected else R.drawable.bg_type_unselected)
                 
-                val perms = mutableListOf(Manifest.permission.RECORD_AUDIO)
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-                    perms.add(Manifest.permission.BLUETOOTH_CONNECT)
-                }
-                requestAudioPermission.launch(perms.toTypedArray())
+                // Update text and icon colors
+                val color = if (isSelected) Color.parseColor("#006064") else Color.parseColor("#546E7A")
+                val tv = view.getChildAt(1) as? TextView
+                val iv = view.getChildAt(0) as? ImageView
+                tv?.setTextColor(color)
+                iv?.setColorFilter(color)
             }
-            .setNegativeButton("Cancel", null)
+        }
 
-        builder.show()
+        btnCoding.setOnClickListener { updateSelection("Coding") }
+        btnMath.setOnClickListener { updateSelection("Math") }
+        btnAptitude.setOnClickListener { updateSelection("Aptitude") }
+        btnGeneral.setOnClickListener { updateSelection("General") }
+
+        val dialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        btnCancel.setOnClickListener { dialog.dismiss() }
+        btnStart.setOnClickListener {
+            selectedContentType = tempType
+            selectedTopic = etTopic.text.toString().ifBlank { "Session on $selectedContentType" }
+            dialog.dismiss()
+
+            val perms = mutableListOf(Manifest.permission.RECORD_AUDIO)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                perms.add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+            requestAudioPermission.launch(perms.toTypedArray())
+        }
+
+        dialog.show()
     }
 
     private fun startMediaProjectionRequest() {
