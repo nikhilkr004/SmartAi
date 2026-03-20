@@ -125,9 +125,9 @@ export async function generateStructuredNotes(transcript, videoFileData = null) 
       { text: "Your goal: Identify the core 20% of content that gives 80% of the value. Keep it short!" },
       { text: "CRITICAL VISUAL RULES:" },
       { text: "1. DIAGRAMS: You MUST include at least THREE (3) distinct diagrams in Mermaid notation. Use ```mermaid blocks. \n" +
-              "   - ALWAYS start each Mermaid block with: %%{init: {'theme': 'neutral'}}%% \n" +
               "   - Use professional Mermaid syntax (graph TD, sequenceDiagram, classDiagram). \n" +
-              "   - Keep it simple: Flowcharts are best for study notes." },
+              "   - Keep it simple: Flowcharts are best for study notes. \n" +
+              "   - DO NOT include theme initialization strings; just start with the diagram type (e.g., 'graph TD')." },
       { text: "2. NO VERBOSITY: Avoid long paragraphs. Use bullet points and bold text." },
       { text: "3. SPECIAL CALLOUTS: Include at least 2 'Pro Tips' and 2 'Definitions'. \n" +
               "   - Format Pro Tips as: [TIP: Your tip here] \n" +

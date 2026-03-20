@@ -15,25 +15,24 @@ export async function generateMermaidImage(mermaidCode) {
   if (!cleanCode) return null;
 
   try {
-    console.log("[MERMAID] Requesting diagram image from QuickChart...");
-    // QuickChart is very robust for standard Mermaid
-    const url = `https://quickchart.io/mermaid?graph=${encodeURIComponent(cleanCode)}&width=800`;
+    console.log("[MERMAID] Requesting diagram image via POST (Kroki)...");
+    // POST is much more reliable for long diagrams as it avoids URL length limits
+    const response = await axios.post("https://kroki.io/mermaid/png", cleanCode, {
+      headers: { 'Content-Type': 'text/plain' },
+      responseType: "arraybuffer",
+      timeout: 15000
+    });
     
-    const response = await axios.get(url, { responseType: "arraybuffer", timeout: 12000 });
-    console.log("[MERMAID] Successfully generated image!");
+    console.log("[MERMAID] Successfully generated image via POST!");
     return Buffer.from(response.data);
   } catch (error) {
-    console.warn("[MERMAID] QuickChart failed, trying Mermaid.ink fallback...", error.message);
+    console.warn("[MERMAID] POST failed, trying QuickChart GET fallback...", error.message);
     
     try {
-      const b64 = Buffer.from(cleanCode).toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-      const inkUrl = `https://mermaid.ink/img/${b64}`;
-      const inkResponse = await axios.get(inkUrl, { responseType: "arraybuffer", timeout: 10000 });
-      return Buffer.from(inkResponse.data);
-    } catch (inkError) {
+      const url = `https://quickchart.io/mermaid?graph=${encodeURIComponent(cleanCode)}&width=800`;
+      const response = await axios.get(url, { responseType: "arraybuffer", timeout: 10000 });
+      return Buffer.from(response.data);
+    } catch (fallbackError) {
       console.error("[MERMAID ERROR] All diagram fallbacks failed.");
       return null;
     }
