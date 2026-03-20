@@ -9,21 +9,59 @@ const __dirname = path.dirname(__filename);
 
 import { ensureDir, getTmpDir } from "../utils/fileHelper.js";
 
-function drawRoundedSection(doc, title, body, color = "#0056b3") {
-  doc.moveDown(1);
-  const startY = doc.y;
-  
-  // Draw accent line
-  doc.lineWidth(3).lineCap('round').moveTo(54, startY).lineTo(54, startY + 20).stroke(color);
-  
-  doc.fillColor(color).font("HumanFont-Bold").fontSize(18).text(`  ${title}`, 54, startY);
+function drawCallout(doc, type, content) {
+  const colors = {
+    TIP: { bg: "#FFF9C4", border: "#FBC02D", text: "#827717", label: "PRO TIP" },
+    DEF: { bg: "#E0F2F1", border: "#009688", text: "#004D40", label: "DEFINITION" }
+  };
+  const theme = colors[type] || colors.TIP;
+
   doc.moveDown(0.5);
-  doc.fillColor("#333333").font("HumanFont").fontSize(14).text(body, { 
-    lineGap: 4,
-    align: 'justify',
-    indent: 10
-  });
-  doc.moveDown(1);
+  const startX = doc.x;
+  const startY = doc.y;
+  const width = 480;
+
+  // Calculate high for text
+  doc.font("HumanFont").fontSize(11);
+  const textHeight = doc.heightOfString(content, { width: width - 20 });
+  const rectHeight = textHeight + 25;
+
+  // Draw background
+  doc.roundedRect(startX, startY, width, rectHeight, 8).fill(theme.bg);
+  doc.roundedRect(startX, startY, 4, rectHeight, { tl: 8, bl: 8, tr: 0, br: 0 }).fill(theme.border);
+
+  // Draw Label
+  doc.fillColor(theme.border).font("HumanFont-Bold").fontSize(9).text(theme.label, startX + 12, startY + 6);
+  
+  // Draw Content
+  doc.fillColor(theme.text).font("HumanFont").fontSize(11).text(content, startX + 12, startY + 18, { width: width - 20 });
+  
+  doc.y = startY + rectHeight + 5;
+  doc.moveDown(0.5);
+}
+
+function renderSmartContent(doc, text) {
+  // Regex to find [TIP: ...] and [DEF: ...]
+  const parts = text.split(/(\[TIP:.*?\]|\[DEF:.*?\])/g);
+
+  for (const part of parts) {
+    if (part.startsWith("[TIP:")) {
+      const content = part.replace("[TIP:", "").replace("]", "").trim();
+      drawCallout(doc, "TIP", content);
+    } else if (part.startsWith("[DEF:")) {
+      const content = part.replace("[DEF:", "").replace("]", "").trim();
+      drawCallout(doc, "DEF", content);
+    } else {
+      const cleanText = part.trim();
+      if (cleanText) {
+        doc.fillColor("#333333").font("HumanFont").fontSize(13).text(cleanText, { 
+          lineGap: 4,
+          align: 'justify'
+        });
+        doc.moveDown(0.5);
+      }
+    }
+  }
 }
 
 export async function createNotesPdf({ notes, transcript, diagramBuffers, visualImagePaths = [] }) {
@@ -36,7 +74,7 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
       size: "A4",
       margin: 54,
       bufferPages: true,
-      info: { Title: "Smart AI Classroom Notes" }
+      info: { Title: "StudyAI Premium Notes" }
     });
 
     await new Promise((resolve, reject) => {
@@ -49,67 +87,79 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
       doc.registerFont("HumanFont-Bold", boldFontPath);
       doc.registerFont("HumanFont", regularFontPath);
 
-      // --- Header ---
-      doc.rect(0, 0, doc.page.width, 100).fill("#0056b3");
-      doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(28).text("SMART CLASSROOM", 54, 35);
-      doc.fontSize(14).text("AI-Powered Visual Study Notes", 54, 65);
+      // --- PAGE 1: HERO & DASHBOARD ---
+      // Background Accent
+      doc.rect(0, 0, doc.page.width, 220).fill("#3F51B5");
       
-      doc.moveDown(4);
-      doc.fillColor("#000000"); // Reset color
+      // Title
+      doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(32).text("LECTURE GUIDE", 54, 50);
+      doc.fontSize(14).font("HumanFont").text("AI-POWERED VISUAL CAPTURE", 54, 85);
+      
+      // Info Badges
+      doc.roundedRect(54, 120, 120, 40, 5).fill("#5C6BC0");
+      doc.fillColor("#ffffff").fontSize(10).text("TOPIC", 64, 130);
+      doc.fontSize(12).font("HumanFont-Bold").text("Class Session", 64, 142);
 
-      // --- Notes Section ---
-      drawRoundedSection(doc, "Lesson Insights", notes || "");
+      doc.roundedRect(190, 120, 120, 40, 5).fill("#5C6BC0");
+      doc.fillColor("#ffffff").font("HumanFont").fontSize(10).text("DATE", 200, 130);
+      doc.fontSize(12).font("HumanFont-Bold").text(new Date().toLocaleDateString(), 200, 142);
 
-      // --- Visual Insights (Screenshots) ---
+      doc.moveDown(8);
+      
+      // --- CONTENT SECTION ---
+      doc.fillColor("#1A237E").font("HumanFont-Bold").fontSize(22).text("Core Insights", 54, 240);
+      doc.rect(54, 268, 50, 4).fill("#3F51B5");
+      doc.moveDown(2);
+
+      renderSmartContent(doc, notes || "");
+
+      // --- Visual Insights Section ---
       if (visualImagePaths && visualImagePaths.length > 0) {
         doc.addPage();
-        // Header for new page
-        doc.rect(0, 0, doc.page.width, 50).fill("#0056b3");
-        doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(18).text("Visual Insights from Recording", 54, 15);
-        doc.moveDown(2.5);
-        doc.fillColor("#000000");
+        doc.rect(0, 0, doc.page.width, 80).fill("#0097A7"); // Cyan for visuals
+        doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(22).text("Visual Moments", 54, 30);
+        doc.moveDown(3);
 
         for (const imgPath of visualImagePaths) {
            try {
              doc.image(imgPath, {
-               fit: [450, 300],
+               fit: [480, 280],
                align: 'center'
              });
-             doc.moveDown(1);
-             doc.font("HumanFont").fontSize(10).fillColor("#666666").text("Captured from screen recording", { align: "center" });
-             doc.moveDown(2);
-             doc.fillColor("#000000");
+             doc.moveDown(0.5);
+             doc.font("HumanFont").fontSize(10).fillColor("#666666").text("SCREENCAP ANALYSIS", { align: "center", characterSpacing: 1 });
+             doc.moveDown(1.5);
            } catch (e) {
-             console.error("[PDF] Error embedding screenshot:", e.message);
+             console.error("[PDF] Image error:", e.message);
            }
         }
       }
 
-      // --- Mermaid Diagrams ---
+      // --- Diagrams Section ---
       if (diagramBuffers && diagramBuffers.length > 0) {
         for (let i = 0; i < diagramBuffers.length; i++) {
           doc.addPage();
-          doc.rect(0, 0, doc.page.width, 50).fill("#28a745"); // Green for diagrams
-          doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(18).text(`Concept Visual #${i + 1}`, 54, 15);
+          doc.rect(0, 0, doc.page.width, 80).fill("#43A047"); // Green for concepts
+          doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(22).text(`Concept Visual #${i + 1}`, 54, 30);
           doc.moveDown(3);
           
           try {
             doc.image(diagramBuffers[i], {
-               fit: [480, 500],
+               fit: [480, 450],
                align: 'center'
             });
           } catch (imgError) {
-            console.error("[PDF] Failed to embed Mermaid image:", imgError.message);
+            console.error("[PDF] Diagram error:", imgError.message);
           }
         }
       }
 
-      // --- Transcript ---
+      // --- Final Transcript ---
       doc.addPage();
-      doc.rect(0, 0, doc.page.width, 50).fill("#6c757d"); // Gray for transcript
-      doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(18).text("Original Transcript", 54, 15);
+      doc.rect(0, 0, doc.page.width, 60).fill("#455A64"); // Blue-gray
+      doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(18).text("Class Transcript", 54, 22);
       doc.moveDown(3);
-      doc.fillColor("#333333").font("HumanFont").fontSize(12).text(transcript || "", { lineGap: 2 });
+      doc.fillColor("#555555").font("HumanFont").fontSize(10).text(transcript || "", { lineGap: 1, columns: 2, columnGap: 20 });
 
       doc.end();
       stream.on("finish", resolve);
@@ -118,7 +168,7 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
 
     return pdfPath;
   } catch (err) {
-    throw Object.assign(new Error(`PDF generation error: ${err.message}`), { statusCode: err.statusCode || 500 });
+    throw Object.assign(new Error(`PDF upgrade error: ${err.message}`), { statusCode: err.statusCode || 500 });
   }
 }
 

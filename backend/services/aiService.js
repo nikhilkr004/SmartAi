@@ -129,8 +129,12 @@ export async function generateStructuredNotes(transcript, videoFileData = null) 
               "   - ALWAYS wrap node names in double quotes if they contain spaces, dots, brackets, or special characters. \n" +
               "   - Example: \"Input Array\" -> \"Arrays.stream()\" -> \"Set\" \n" +
               "   - Keep it simple: Flowcharts are better than complex nested shapes." },
-      { text: "2. NO VERBOSITY: Avoid long paragraphs. Use bullet points, bold text, and short 'Insights' boxes." },
-      { text: "3. CODE: If code is mentioned, provide a clean snippet with a brief explanation." }
+      { text: "2. NO VERBOSITY: Avoid long paragraphs. Use bullet points and bold text." },
+      { text: "3. SPECIAL CALLOUTS: Include at least 2 'Pro Tips' and 2 'Definitions'. \n" +
+              "   - Format Pro Tips as: [TIP: Your tip here] \n" +
+              "   - Format Definitions as: [DEF: Term - Definition] \n" +
+              "   These will be styled specially in the PDF." },
+      { text: "4. CODE: If code is mentioned, provide a clean snippet with a brief explanation." }
     ];
 
     if (videoFileData) {
