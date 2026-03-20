@@ -110,17 +110,17 @@ export async function generateStructuredNotes(transcript) {
     const model = client.getGenerativeModel({ model: "gemini-2.5-flash" });
 
     const prompt = [
-      "You are a friendly, human-like educational assistant.",
-      "Below is a transcript from a classroom session or video.",
-      "Please transform this transcript into beautifully written, conversational student notes that feel like they were written by a smart classmate.",
+      "You are an expert tutor writing highly comprehensive, detailed study notes for a student.",
+      "Below is a transcript from a classroom session or educational video.",
+      "Your critical task is to extract and beautifully organize EVERYTHING taught in this lecture.",
       "",
       "IMPORTANT INSTRUCTIONS:",
-      "- Maintain the original language of the discussion (e.g., if the transcript is in Hindi or Hinglish, keep the notes in that style).",
-      "- Write in a very natural, human, conversational tone.",
-      "- Summarize what actually happened in the video/audio.",
-      "- Highlight key takeaways naturally, using bullet points only where it makes sense.",
-      "- Explain things simply as if you were talking to a friend.",
-      "- If the transcript is mostly silent or empty, kindly mention that there wasn't much spoken content in the video.",
+      "- DO NOT just provide a brief overview or simple timestamps. You MUST read the entire transcript and explain all the actual educational topics, formulas, concepts, and details mentioned.",
+      "- Write the notes in a highly conversational, engaging, and human-like tone, as if a brilliant classmate wrote them to help you study.",
+      "- Explain complex rules or topics simply as if you were talking to a friend.",
+      "- Organize the notes logically using headers and bullet points so it is easy to read.",
+      "- Provide specific examples that the teacher used.",
+      "- Keep the original language (if Hindi was spoken, write the concepts out conversationally in Hindi/English).",
       "",
       "TRANSCRIPT:",
       transcript

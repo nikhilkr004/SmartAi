@@ -1,15 +1,19 @@
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 import { v4 as uuidv4 } from "uuid";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 import { ensureDir, getTmpDir } from "../utils/fileHelper.js";
 
 function addSection(doc, title, body) {
   doc.moveDown(0.5);
-  doc.font("Times-Bold").fontSize(14).text(title);
+  doc.font("HumanFont-Bold").fontSize(16).text(title);
   doc.moveDown(0.3);
-  doc.font("Times-Roman").fontSize(12).text(body, { lineGap: 4 });
+  doc.font("HumanFont").fontSize(14).text(body, { lineGap: 4 });
 }
 
 export async function createNotesPdf({ notes, transcript }) {
@@ -30,7 +34,13 @@ export async function createNotesPdf({ notes, transcript }) {
       const stream = fs.createWriteStream(pdfPath);
       doc.pipe(stream);
 
-      doc.font("Times-Bold").fontSize(22).text("Smart Classroom Assistant Notes", { align: "center" });
+      const boldFontPath = path.join(__dirname, "..", "fonts", "HumanFont-Bold.ttf");
+      const regularFontPath = path.join(__dirname, "..", "fonts", "HumanFont.ttf");
+      
+      doc.registerFont("HumanFont-Bold", boldFontPath);
+      doc.registerFont("HumanFont", regularFontPath);
+
+      doc.font("HumanFont-Bold").fontSize(26).text("Smart Classroom Assistant Notes", { align: "center" });
       doc.moveDown(1);
 
       addSection(doc, "Notes", notes || "");
