@@ -55,7 +55,12 @@ export async function transcribeAudio(audioPath) {
     console.log(`[GEMINI] Generating transcription...`);
     // Note: Gemini understands audio naturally natively
     const result = await model.generateContent([
-      uploadResult.file,
+      {
+        fileData: {
+          mimeType: uploadResult.file.mimeType,
+          fileUri: uploadResult.file.uri
+        }
+      },
       { text: "Please provide a highly accurate transcription of this audio file. Preserve the original language and capture all spoken words clearly." }
     ]);
 
