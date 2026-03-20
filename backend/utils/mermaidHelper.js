@@ -7,33 +7,48 @@ import axios from "axios";
  */
 export async function generateMermaidImage(mermaidCode) {
   if (!mermaidCode) return null;
-  const cleanCode = mermaidCode
+  // CLEANER: Remove markdown fences and trim
+  let cleanCode = mermaidCode
     .replace(/```mermaid/g, "")
     .replace(/```/g, "")
     .trim();
+
+  // AUTO-FIXER: Fix common AI mistakes
+  cleanCode = cleanCode
+    .split('\n')
+    .map(line => {
+      // 1. Force '->' to '-->' (More stable in Mermaid)
+      if (line.includes('->') && !line.includes('-->')) {
+        return line.replace(/->/g, '-->');
+      }
+      return line;
+    })
+    .filter(line => !line.trim().startsWith('%%')) // Remove comments
+    .join('\n');
 
   if (!cleanCode) return null;
 
   try {
     console.log("[MERMAID] Requesting diagram image via POST (Kroki)...");
-    // POST is much more reliable for long diagrams as it avoids URL length limits
     const response = await axios.post("https://kroki.io/mermaid/png", cleanCode, {
       headers: { 'Content-Type': 'text/plain' },
       responseType: "arraybuffer",
       timeout: 15000
     });
     
-    console.log("[MERMAID] Successfully generated image via POST!");
+    console.log("[MERMAID] Successfully generated image!");
     return Buffer.from(response.data);
   } catch (error) {
-    console.warn("[MERMAID] POST failed, trying QuickChart GET fallback...", error.message);
+    console.warn("[MERMAID ERROR] Rendering failed. Status:", error.response?.status);
+    console.warn("[MERMAID DEBUG] Code that failed:\n", cleanCode);
     
     try {
+      // Fallback to simpler QuickChart GET
       const url = `https://quickchart.io/mermaid?graph=${encodeURIComponent(cleanCode)}&width=800`;
       const response = await axios.get(url, { responseType: "arraybuffer", timeout: 10000 });
       return Buffer.from(response.data);
     } catch (fallbackError) {
-      console.error("[MERMAID ERROR] All diagram fallbacks failed.");
+      console.error("[MERMAID ERROR] All fallbacks failed.");
       return null;
     }
   }
