@@ -38,8 +38,15 @@ class HistoryAdapter(
             val pdfUrl = item["pdfUrl"]?.toString().orEmpty()
             val createdAt = item["createdAt"]?.toString().orEmpty()
 
-            binding.tvTitle.text = if (id.isNotBlank()) "Recording $id" else "Recording"
-            binding.tvSubtitle.text = if (pdfUrl.isNotBlank()) "PDF ready" else "Tap to open"
+            binding.tvTitle.text = if (id.isNotBlank()) "Recording #$id" else "Recording"
+            binding.tvSubtitle.text = if (pdfUrl.isNotBlank()) "• PDF READY" else "• PROCESSING"
+            binding.tvSubtitle.setTextColor(
+                if (pdfUrl.isNotBlank()) 
+                    holder.itemView.context.getColor(com.studyai.smartclassroom.R.color.status_ready)
+                else 
+                    holder.itemView.context.getColor(com.studyai.smartclassroom.R.color.status_processing)
+            )
+            binding.tvDate.text = if (createdAt.isNotBlank()) createdAt else "No date"
 
             binding.root.setOnClickListener {
                 if (id.isNotBlank()) onClick(id)

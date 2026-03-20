@@ -1,0 +1,16 @@
+<resources>
+    <color name="primary_teal">#006064</color>
+    <color name="primary_teal_dark">#00363a</color>
+    <color name="primary_teal_light">#B2DFDB</color>
+    <color name="secondary_purple">#7C4DFF</color>
+    <color name="bg_gradient_start">#E0F7FA</color>
+    <color name="bg_gradient_end">#F3E5F5</color>
+    <color name="card_bg">#FFFFFF</color>
+    <color name="text_main">#212121</color>
+    <color name="text_sub">#757575</color>
+    <color name="status_ready">#00BFA5</color>
+    <color name="status_processing">#FFA000</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="nav_bg">#F5F5F5</color>
+</resources>

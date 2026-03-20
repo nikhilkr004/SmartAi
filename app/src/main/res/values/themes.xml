@@ -1,12 +1,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Theme.SmartClassroom" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#2E7D32</item>
-        <item name="colorPrimaryVariant">#1B5E20</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorSecondary">#1565C0</item>
-        <item name="colorSecondaryVariant">#0D47A1</item>
-        <item name="colorOnSecondary">#FFFFFF</item>
-        <item name="android:statusBarColor" tools:targetApi="l">?attr/colorPrimaryVariant</item>
+        <item name="colorPrimary">@color/primary_teal</item>
+        <item name="colorPrimaryVariant">@color/primary_teal_dark</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorSecondary">@color/secondary_purple</item>
+        <item name="android:statusBarColor">#00000000</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>
 
