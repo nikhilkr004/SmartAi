@@ -19,7 +19,8 @@ export async function generateMermaidImage(mermaidCode) {
     console.warn("[MERMAID] Primary renderer failed, trying Fallback (Kroki)...", error.message);
     
     try {
-      // Fallback to Kroki POST
+      // Fallback 1: Kroki POST
+      console.log("[MERMAID] Trying Fallback 1 (Kroki)...");
       const krokiResponse = await axios.post("https://kroki.io/mermaid/png", mermaidCode, {
         headers: { 'Content-Type': 'text/plain' },
         responseType: "arraybuffer",
@@ -28,8 +29,19 @@ export async function generateMermaidImage(mermaidCode) {
       console.log("[MERMAID] Kroki fallback successful!");
       return Buffer.from(krokiResponse.data);
     } catch (fallbackError) {
-      console.error("[MERMAID ERROR] All rendering attempts failed:", fallbackError.message);
-      return null;
+      console.warn("[MERMAID] Kroki failed, trying Fallback 2 (Mermaid.ink)...", fallbackError.message);
+      
+      try {
+        // Fallback 2: Mermaid.ink (Base64)
+        const b64 = Buffer.from(mermaidCode).toString('base64');
+        const inkUrl = `https://mermaid.ink/img/${b64}`;
+        const inkResponse = await axios.get(inkUrl, { responseType: "arraybuffer", timeout: 10000 });
+        console.log("[MERMAID] Mermaid.ink fallback successful!");
+        return Buffer.from(inkResponse.data);
+      } catch (inkError) {
+        console.error("[MERMAID ERROR] All rendering attempts failed:", inkError.message);
+        return null;
+      }
     }
   }
 }

@@ -3,6 +3,9 @@ package com.studyai.smartclassroom.ui.dashboard
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.Timestamp
+import java.text.SimpleDateFormat
+import java.util.Locale
 import com.studyai.smartclassroom.databinding.ItemHistoryBinding
 
 /**
@@ -36,17 +39,23 @@ class HistoryAdapter(
         fun bind(item: Map<String, Any?>) {
             val id = item["id"]?.toString().orEmpty()
             val pdfUrl = item["pdfUrl"]?.toString().orEmpty()
-            val createdAt = item["createdAt"]?.toString().orEmpty()
+            val createdAtObj = item["createdAt"] 
+            val dateStr = if (createdAtObj is Timestamp) {
+                val sdf = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+                sdf.format(createdAtObj.toDate())
+            } else {
+                createdAtObj?.toString().orEmpty()
+            }
 
             binding.tvTitle.text = if (id.isNotBlank()) "Recording #$id" else "Recording"
             binding.tvSubtitle.text = if (pdfUrl.isNotBlank()) "• PDF READY" else "• PROCESSING"
             binding.tvSubtitle.setTextColor(
                 if (pdfUrl.isNotBlank()) 
-                    holder.itemView.context.getColor(com.studyai.smartclassroom.R.color.status_ready)
+                    itemView.context.getColor(com.studyai.smartclassroom.R.color.status_ready)
                 else 
-                    holder.itemView.context.getColor(com.studyai.smartclassroom.R.color.status_processing)
+                    itemView.context.getColor(com.studyai.smartclassroom.R.color.status_processing)
             )
-            binding.tvDate.text = if (createdAt.isNotBlank()) createdAt else "No date"
+            binding.tvDate.text = if (dateStr.isNotBlank()) dateStr else "No date"
 
             binding.root.setOnClickListener {
                 if (id.isNotBlank()) onClick(id)

@@ -61,6 +61,11 @@ class ResultActivity : AppCompatActivity() {
         binding.tvTranscript.text = transcript
         binding.tvNotes.text = notes
         binding.btnOpenPdf.tag = pdfUrl
+        
+        // Optional: Extract a title from the notes or just use a default
+        if (notes.lines().isNotEmpty()) {
+            binding.tvResultTitle.text = notes.lines().first().replace("#", "").trim()
+        }
     }
 
     private fun loadFromFirestore(id: String) {

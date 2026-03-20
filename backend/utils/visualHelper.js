@@ -1,6 +1,13 @@
 import ffmpeg from "fluent-ffmpeg";
+import ffmpegPath from "ffmpeg-static";
 import path from "path";
-import { getTmpDir, ensureDir } from "./fileHelper.js";
+import { ensureDir, getTmpDir } from "./fileHelper.js";
+
+// Ensure fluent-ffmpeg knows where the binary is (crucial for Railway)
+if (ffmpegPath) {
+  ffmpeg.setFfmpegPath(ffmpegPath);
+  console.log("[VISUAL] FFMPEG Path set:", ffmpegPath);
+}
 import { v4 as uuidv4 } from "uuid";
 
 /**
