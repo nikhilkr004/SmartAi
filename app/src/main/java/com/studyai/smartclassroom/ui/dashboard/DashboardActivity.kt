@@ -78,12 +78,13 @@ class DashboardActivity : AppCompatActivity() {
     }
 
     private val requestAudioPermission = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (!granted) {
-            Toast.makeText(this, "Microphone permission is required", Toast.LENGTH_LONG).show()
-        } else {
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val micGranted = results[Manifest.permission.RECORD_AUDIO] ?: false
+        if (micGranted) {
             startMediaProjectionRequest()
+        } else {
+            Toast.makeText(this, "Microphone permission is required", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -259,7 +260,12 @@ class DashboardActivity : AppCompatActivity() {
             .setPositiveButton("Start") { _, _ ->
                 selectedContentType = tempType
                 selectedTopic = etTopic.text.toString().ifBlank { "Session on $selectedContentType" }
-                requestAudioPermission.launch(Manifest.permission.RECORD_AUDIO)
+                
+                val perms = mutableListOf(Manifest.permission.RECORD_AUDIO)
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
+                    perms.add(Manifest.permission.BLUETOOTH_CONNECT)
+                }
+                requestAudioPermission.launch(perms.toTypedArray())
             }
             .setNegativeButton("Cancel", null)
 

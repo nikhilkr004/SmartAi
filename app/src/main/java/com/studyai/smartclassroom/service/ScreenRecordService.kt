@@ -18,6 +18,7 @@ import android.util.DisplayMetrics
 import android.util.Log
 import android.view.WindowManager
 import androidx.core.app.NotificationCompat
+import android.media.AudioManager
 import com.studyai.smartclassroom.R
 import com.studyai.smartclassroom.ui.dashboard.DashboardActivity
 import com.studyai.smartclassroom.utils.Constants
@@ -43,6 +44,7 @@ class ScreenRecordService : Service() {
     private var mediaProjection: MediaProjection? = null
     private var virtualDisplay: VirtualDisplay? = null
     private var recorder: MediaRecorder? = null
+    private var audioManager: AudioManager? = null
     private var outputFile: File? = null
     @Volatile private var isStopping = false
 
@@ -100,7 +102,7 @@ class ScreenRecordService : Service() {
             outputFile = File(outDir, "recording_${System.currentTimeMillis()}.mp4")
 
             recorder = MediaRecorder().apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
+                setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
                 setVideoSource(MediaRecorder.VideoSource.SURFACE)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
                 setOutputFile(outputFile!!.absolutePath)
@@ -136,10 +138,31 @@ class ScreenRecordService : Service() {
 
             recorder?.start()
             Log.i(Constants.TAG, "Recording started: ${outputFile?.absolutePath}")
+
+            // Start Bluetooth SCO for reliable microphone capture
+            startBluetoothSco()
         } catch (e: Exception) {
             Log.e(Constants.TAG, "Failed to start recording: ${e.message}", e)
+            stopBluetoothSco()
             stopSelf()
         }
+    }
+
+    private fun startBluetoothSco() {
+        audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        try {
+             Log.d(Constants.TAG, "Starting Bluetooth SCO...")
+             audioManager?.startBluetoothSco()
+             audioManager?.isBluetoothScoOn = true
+        } catch (e: Exception) {
+             Log.e(Constants.TAG, "Bluetooth SCO Error: ${e.message}")
+        }
+    }
+
+    private fun stopBluetoothSco() {
+        Log.d(Constants.TAG, "Stopping Bluetooth SCO...")
+        audioManager?.stopBluetoothSco()
+        audioManager?.isBluetoothScoOn = false
     }
 
     private fun stopRecording() {
@@ -170,6 +193,8 @@ class ScreenRecordService : Service() {
 
             mediaProjection?.stop()
             mediaProjection = null
+
+            stopBluetoothSco()
 
             val path = outputFile?.absolutePath
             ProjectionPermissionStore.clear()
