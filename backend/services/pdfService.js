@@ -26,7 +26,7 @@ function drawRoundedSection(doc, title, body, color = "#0056b3") {
   doc.moveDown(1);
 }
 
-export async function createNotesPdf({ notes, transcript, diagramBuffer, visualImagePaths = [] }) {
+export async function createNotesPdf({ notes, transcript, diagramBuffers, visualImagePaths = [] }) {
   try {
     const tmpDir = getTmpDir();
     await ensureDir(tmpDir);
