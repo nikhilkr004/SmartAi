@@ -19,6 +19,8 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
 import com.studyai.smartclassroom.R
 import com.studyai.smartclassroom.databinding.ActivityPdfViewerBinding
 import com.studyai.smartclassroom.utils.Constants
