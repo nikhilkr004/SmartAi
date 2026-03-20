@@ -37,13 +37,12 @@ class ResultActivity : AppCompatActivity() {
         if (transcriptExtra.isNotBlank() || notesExtra.isNotBlank() || pdfUrlExtra.isNotBlank()) {
             bindContent(transcriptExtra, notesExtra, pdfUrlExtra, contentTypeExtra, topicExtra)
             // Auto-open PDF if it's newly generated (passed via extras)
-            if (pdfUrlExtra.isNotBlank()) {
                 val intent = Intent(this, PdfViewerActivity::class.java).apply {
                     putExtra(Constants.EXTRA_PDF_URL, pdfUrlExtra)
                     putExtra(Constants.EXTRA_TOPIC, topicExtra)
+                    putExtra(Constants.EXTRA_RECORDING_ID, recordingId)
                 }
                 startActivity(intent)
-            }
         } else if (recordingId.isNotBlank()) {
             loadFromFirestore(recordingId)
         } else {
@@ -61,6 +60,7 @@ class ResultActivity : AppCompatActivity() {
             val intent = Intent(this, PdfViewerActivity::class.java).apply {
                 putExtra(Constants.EXTRA_PDF_URL, pdfUrl)
                 putExtra(Constants.EXTRA_TOPIC, binding.tvResultTitle.text.toString())
+                putExtra(Constants.EXTRA_RECORDING_ID, recordingId)
             }
             startActivity(intent)
         }

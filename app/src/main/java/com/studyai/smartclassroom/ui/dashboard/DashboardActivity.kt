@@ -1,7 +1,6 @@
 package com.studyai.smartclassroom.ui.dashboard
 
 import android.Manifest
-import android.R
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -28,6 +27,7 @@ import com.studyai.smartclassroom.viewmodel.MainViewModel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import com.studyai.smartclassroom.R
 import java.io.File
 
 /**
@@ -136,6 +136,10 @@ class DashboardActivity : AppCompatActivity() {
             binding.btnStop.isEnabled = false
         }
 
+        binding.btnNavProfile.setOnClickListener {
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.profile.ProfileActivity::class.java))
+        }
+
         // Collect VM state.
         lifecycleScope.launch {
             vm.state.collectLatest { state ->
@@ -238,10 +242,10 @@ class DashboardActivity : AppCompatActivity() {
         val types = arrayOf("Coding", "Math", "Aptitude", "General")
         var tempType = "General"
 
-        val dialogView = layoutInflater.inflate(R.layout.dialog_recording_setup, null)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_recording_setup, null) ?: return
         val etTopic = dialogView.findViewById<EditText>(R.id.etSessionName)
-        val btnStart = dialogView.findViewById<View>(R.id.btnStart)
-        val btnCancel = dialogView.findViewById<View>(R.id.btnCancel)
+        val btnStart = dialogView.findViewById<Button>(R.id.btnStart)
+        val btnCancel = dialogView.findViewById<Button>(R.id.btnCancel)
 
         // Type Buttons
         val btnCoding = dialogView.findViewById<LinearLayout>(R.id.btnTypeCoding)
@@ -249,7 +253,7 @@ class DashboardActivity : AppCompatActivity() {
         val btnAptitude = dialogView.findViewById<LinearLayout>(R.id.btnTypeAptitude)
         val btnGeneral = dialogView.findViewById<LinearLayout>(R.id.btnTypeGeneral)
 
-        val typeButtons = mapOf(
+        val typeButtons: Map<String, LinearLayout> = mapOf(
             "Coding" to btnCoding,
             "Math" to btnMath,
             "Aptitude" to btnAptitude,
@@ -270,10 +274,11 @@ class DashboardActivity : AppCompatActivity() {
                 
                 // Update text and icon colors
                 val color = if (isSelected) Color.parseColor("#006064") else Color.parseColor("#546E7A")
-                val tv = view.getChildAt(1) as? TextView
                 val iv = view.getChildAt(0) as? ImageView
-                tv?.setTextColor(color)
+                val tv = view.getChildAt(1) as? TextView
+                
                 iv?.setColorFilter(color)
+                tv?.setTextColor(color)
             }
         }
 

@@ -15,6 +15,9 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.studyai.smartclassroom.R
 import com.studyai.smartclassroom.databinding.ActivityPdfViewerBinding
@@ -133,8 +136,30 @@ class PdfViewerActivity : AppCompatActivity() {
     }
 
     private fun toggleFavorite() {
-        // Placeholder for fav logic (updating Firestore)
-        Toast.makeText(this, "Marked as Favorite!", Toast.LENGTH_SHORT).show()
-        binding.fabFavorite.setImageResource(R.drawable.ic_star_filled)
+        if (pdfUrl.isBlank()) return
+        val recordingId = intent.getStringExtra(Constants.EXTRA_RECORDING_ID) ?: return
+
+        lifecycleScope.launch {
+            try {
+                val docRef = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    .collection(Constants.COLLECTION_RECORDINGS).document(recordingId)
+                
+                val doc = docRef.get().await()
+                val isCurrentlyFavorite = doc.getBoolean("isFavorite") ?: false
+                val newFavoriteStatus = !isCurrentlyFavorite
+                
+                docRef.update("isFavorite", newFavoriteStatus).await()
+                
+                binding.fabFavorite.setImageResource(
+                    if (newFavoriteStatus) R.drawable.ic_star_filled else R.drawable.ic_star_outline
+                )
+                
+                Toast.makeText(this@PdfViewerActivity, 
+                    if (newFavoriteStatus) "Added to Favorites!" else "Removed from Favorites", 
+                    Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(this@PdfViewerActivity, "Failed to update favorite: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 }

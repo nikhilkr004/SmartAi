@@ -16,6 +16,10 @@
         android:networkSecurityConfig="@xml/network_security_config">
 
         <activity
+            android:name=".ui.profile.ProfileActivity"
+            android:exported="false" />
+
+        <activity
             android:name=".ui.pdf.PdfViewerActivity"
             android:exported="false"
             android:theme="@style/Theme.SmartClassroom.NoActionBar" />
