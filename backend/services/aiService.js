@@ -124,17 +124,16 @@ export async function generateStructuredNotes(transcript, videoFileData = null) 
       { text: `Below is a transcript from a classroom session: \n\n${transcript}` },
       { text: "Your goal: Identify the core 20% of content that gives 80% of the value. Keep it short!" },
       { text: "CRITICAL VISUAL RULES:" },
-      { text: "1. DIAGRAMS: You MUST include at least THREE (3) distinct diagrams in D2 notation. Use ```d2 blocks. \n" +
-              "   CRITICAL D2 RULES: \n" +
-              "   - ALWAYS wrap node names in double quotes if they contain spaces, dots, brackets, or special characters. \n" +
-              "   - Example: \"Input Array\" -> \"Arrays.stream()\" -> \"Set\" \n" +
-              "   - Keep it simple: Flowcharts are better than complex nested shapes." },
+      { text: "1. DIAGRAMS: You MUST include at least THREE (3) distinct diagrams in Mermaid notation. Use ```mermaid blocks. \n" +
+              "   - ALWAYS start each Mermaid block with: %%{init: {'theme': 'neutral'}}%% \n" +
+              "   - Use professional Mermaid syntax (graph TD, sequenceDiagram, classDiagram). \n" +
+              "   - Keep it simple: Flowcharts are best for study notes." },
       { text: "2. NO VERBOSITY: Avoid long paragraphs. Use bullet points and bold text." },
       { text: "3. SPECIAL CALLOUTS: Include at least 2 'Pro Tips' and 2 'Definitions'. \n" +
               "   - Format Pro Tips as: [TIP: Your tip here] \n" +
               "   - Format Definitions as: [DEF: Term - Definition] \n" +
               "   These will be styled specially in the PDF." },
-      { text: "4. CODE: If code is mentioned, provide a clean snippet with a brief explanation." }
+      { text: "4. CODE: If code is mentioned, provide a clean snippet with a brief explanation. Everything (notes, diagrams, tips) must be in English." }
     ];
 
     if (videoFileData) {
