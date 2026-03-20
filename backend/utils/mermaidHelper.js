@@ -9,20 +9,27 @@ export async function generateMermaidImage(mermaidCode) {
   if (!mermaidCode || mermaidCode.trim() === "") return null;
 
   try {
-    console.log("[MERMAID] Requesting diagram image...");
+    console.log("[MERMAID] Requesting diagram image from Primary (QuickChart)...");
+    const qcUrl = `https://quickchart.io/mermaid?graph=${encodeURIComponent(mermaidCode)}&width=800`;
+    const response = await axios.get(qcUrl, { responseType: "arraybuffer", timeout: 8000 });
     
-    // Using a very robust encoding for QuickChart
-    const url = `https://quickchart.io/mermaid?graph=${encodeURIComponent(mermaidCode)}&width=800`;
-
-    const response = await axios.get(url, {
-      responseType: "arraybuffer",
-      timeout: 20000 
-    });
-
     console.log("[MERMAID] Successfully generated diagram image!");
     return Buffer.from(response.data);
   } catch (error) {
-    console.error("[MERMAID ERROR] Failed to generate image:", error.message);
-    return null; 
+    console.warn("[MERMAID] Primary renderer failed, trying Fallback (Kroki)...", error.message);
+    
+    try {
+      // Fallback to Kroki POST
+      const krokiResponse = await axios.post("https://kroki.io/mermaid/png", mermaidCode, {
+        headers: { 'Content-Type': 'text/plain' },
+        responseType: "arraybuffer",
+        timeout: 10000
+      });
+      console.log("[MERMAID] Kroki fallback successful!");
+      return Buffer.from(krokiResponse.data);
+    } catch (fallbackError) {
+      console.error("[MERMAID ERROR] All rendering attempts failed:", fallbackError.message);
+      return null;
+    }
   }
 }
