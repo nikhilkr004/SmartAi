@@ -11,9 +11,11 @@ import android.view.View
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.FileProvider
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.studyai.smartclassroom.R
 import com.studyai.smartclassroom.databinding.ActivityPdfViewerBinding
 import com.studyai.smartclassroom.utils.Constants
@@ -50,6 +52,24 @@ class PdfViewerActivity : AppCompatActivity() {
         binding.fabDownload.setOnClickListener { downloadPdf() }
         binding.fabShare.setOnClickListener { sharePdf() }
         binding.fabFavorite.setOnClickListener { toggleFavorite() }
+        binding.fabNotes.setOnClickListener { showNotesSheet() }
+    }
+
+    private fun showNotesSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_notes, null)
+        val etNote = view.findViewById<EditText>(R.id.etQuickNote)
+        val btnSave = view.findViewById<View>(R.id.btnSaveNote)
+
+        btnSave.setOnClickListener {
+            val note = etNote.text.toString()
+            if (note.isNotBlank()) {
+                Toast.makeText(this, "Quick Note Saved!", Toast.LENGTH_SHORT).show()
+                dialog.dismiss()
+            }
+        }
+        dialog.setContentView(view)
+        dialog.show()
     }
 
     @SuppressLint("SetJavaScriptEnabled")
