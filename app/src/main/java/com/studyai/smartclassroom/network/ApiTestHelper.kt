@@ -34,8 +34,10 @@ object ApiTestHelper {
                 val filePart = MultipartBody.Part.createFormData("file", file.name, fileBody)
 
                 Log.d(Constants.TAG, "API TEST: Sending request to /process...")
+                val contentTypeBody = "General".toRequestBody("text/plain".toMediaTypeOrNull())
+                val topicBody = "Test Topic".toRequestBody("text/plain".toMediaTypeOrNull())
                 val resp = withContext(Dispatchers.IO) {
-                    RetrofitClient.api.processRecording("Bearer $token", filePart)
+                    RetrofitClient.api.processRecording("Bearer $token", filePart, contentTypeBody, topicBody)
                 }
 
                 if (resp.isSuccessful) {

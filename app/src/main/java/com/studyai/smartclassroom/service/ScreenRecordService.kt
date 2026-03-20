@@ -101,7 +101,12 @@ class ScreenRecordService : Service() {
             val outDir = File(getExternalFilesDir(null), "recordings").apply { mkdirs() }
             outputFile = File(outDir, "recording_${System.currentTimeMillis()}.mp4")
 
-            recorder = MediaRecorder().apply {
+            recorder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                MediaRecorder(this)
+            } else {
+                @Suppress("DEPRECATION")
+                MediaRecorder()
+            }.apply {
                 setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION)
                 setVideoSource(MediaRecorder.VideoSource.SURFACE)
                 setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
