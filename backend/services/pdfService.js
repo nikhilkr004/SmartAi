@@ -21,20 +21,25 @@ function drawCallout(doc, type, content) {
   const startY = doc.y;
   const width = 480;
 
-  // Calculate high for text
+  // Calculate height for text
   doc.font("HumanFont").fontSize(11);
-  const textHeight = doc.heightOfString(content, { width: width - 20 });
-  const rectHeight = textHeight + 25;
+  const textHeight = doc.heightOfString(content || " ", { width: width - 20 }) || 20;
+  const rectHeight = Math.max(textHeight + 25, 40);
+
+  if (isNaN(startX) || isNaN(startY) || isNaN(rectHeight)) {
+     console.error("[PDF] NaN detected in callout calc:", { startX, startY, rectHeight });
+     return;
+  }
 
   // Draw background
   doc.roundedRect(startX, startY, width, rectHeight, 8).fill(theme.bg);
-  doc.roundedRect(startX, startY, 4, rectHeight, { tl: 8, bl: 8, tr: 0, br: 0 }).fill(theme.border);
+  doc.rect(startX, startY, 4, rectHeight).fill(theme.border); // Simpler left border
 
   // Draw Label
   doc.fillColor(theme.border).font("HumanFont-Bold").fontSize(9).text(theme.label, startX + 12, startY + 6);
   
   // Draw Content
-  doc.fillColor(theme.text).font("HumanFont").fontSize(11).text(content, startX + 12, startY + 18, { width: width - 20 });
+  doc.fillColor(theme.text).font("HumanFont").fontSize(11).text(content || "", startX + 12, startY + 18, { width: width - 20 });
   
   doc.y = startY + rectHeight + 5;
   doc.moveDown(0.5);
