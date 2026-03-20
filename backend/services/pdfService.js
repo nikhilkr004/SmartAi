@@ -47,7 +47,7 @@ function drawCallout(doc, type, content) {
 
 function renderSmartContent(doc, text) {
   // Scrub out any raw diagram blocks (Mermaid/D2) so they don't show as text
-  const cleanBase = text.replace(/```(mermaid|d2)[\s\S]*??```/g, "").trim();
+  const cleanBase = text.replace(/```(mermaid|d2)[\s\S]*?```/g, "").trim();
 
   // Regex to find [TIP: ...] and [DEF: ...]
   const parts = cleanBase.split(/(\[TIP:.*?\]|\[DEF:.*?\])/g);
