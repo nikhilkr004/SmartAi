@@ -47,6 +47,7 @@ export async function processAudio(req, res, next) {
     if (geminiFileName) await deleteGeminiFile(geminiFileName);
 
     const diagramBuffers = [];
+    let match;
     // Priority 1: D2 blocks
     const d2Regex = /```d2\s*([\s\S]*?)```/g;
     while ((match = d2Regex.exec(notes)) !== null) {
