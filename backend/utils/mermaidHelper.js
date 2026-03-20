@@ -14,9 +14,19 @@ export async function generateD2Image(d2Code) {
 
   if (!cleanCode) return null;
 
+  // --- AUTOMATED D2 SANITIZATION ---
+  // If the AI forgot to quote complex lines, we try a simple fix:
+  // We look for lines with '->' and wrap segments in quotes if they aren't already.
+  const sanitizedCode = cleanCode.split('\n').map(line => {
+    if (line.includes('->') && !line.includes('"')) {
+      return line.split('->').map(part => `"${part.trim()}"`).join(' -> ');
+    }
+    return line;
+  }).join('\n');
+
   try {
     console.log("[D2] Requesting diagram image from Kroki...");
-    const response = await axios.post("https://kroki.io/d2/png", cleanCode, {
+    const response = await axios.post("https://kroki.io/d2/png", sanitizedCode, {
       headers: { 'Content-Type': 'text/plain' },
       responseType: "arraybuffer",
       timeout: 15000

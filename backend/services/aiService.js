@@ -124,7 +124,11 @@ export async function generateStructuredNotes(transcript, videoFileData = null) 
       { text: `Below is a transcript from a classroom session: \n\n${transcript}` },
       { text: "Your goal: Identify the core 20% of content that gives 80% of the value. Keep it short!" },
       { text: "CRITICAL VISUAL RULES:" },
-      { text: "1. DIAGRAMS: You MUST include at least THREE (3) distinct diagrams in D2 notation (Declarative Diagramming). Place them in ```d2 blocks. Focus on clear relationships (e.g., Cloud -> Database: Auth)." },
+      { text: "1. DIAGRAMS: You MUST include at least THREE (3) distinct diagrams in D2 notation. Use ```d2 blocks. \n" +
+              "   CRITICAL D2 RULES: \n" +
+              "   - ALWAYS wrap node names in double quotes if they contain spaces, dots, brackets, or special characters. \n" +
+              "   - Example: \"Input Array\" -> \"Arrays.stream()\" -> \"Set\" \n" +
+              "   - Keep it simple: Flowcharts are better than complex nested shapes." },
       { text: "2. NO VERBOSITY: Avoid long paragraphs. Use bullet points, bold text, and short 'Insights' boxes." },
       { text: "3. CODE: If code is mentioned, provide a clean snippet with a brief explanation." }
     ];
