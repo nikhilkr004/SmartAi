@@ -85,20 +85,22 @@ export async function createNotesPdf({ notes, transcript, diagramBuffer, visualI
         }
       }
 
-      // --- Mermaid Diagram ---
-      if (diagramBuffer) {
-        doc.addPage();
-        doc.rect(0, 0, doc.page.width, 50).fill("#28a745"); // Green for diagrams
-        doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(18).text("Concept Flowchart", 54, 15);
-        doc.moveDown(3);
-        
-        try {
-          doc.image(diagramBuffer, {
-             fit: [480, 500],
-             align: 'center'
-          });
-        } catch (imgError) {
-          console.error("[PDF] Failed to embed Mermaid image:", imgError.message);
+      // --- Mermaid Diagrams ---
+      if (diagramBuffers && diagramBuffers.length > 0) {
+        for (let i = 0; i < diagramBuffers.length; i++) {
+          doc.addPage();
+          doc.rect(0, 0, doc.page.width, 50).fill("#28a745"); // Green for diagrams
+          doc.fillColor("#ffffff").font("HumanFont-Bold").fontSize(18).text(`Concept Visual #${i + 1}`, 54, 15);
+          doc.moveDown(3);
+          
+          try {
+            doc.image(diagramBuffers[i], {
+               fit: [480, 500],
+               align: 'center'
+            });
+          } catch (imgError) {
+            console.error("[PDF] Failed to embed Mermaid image:", imgError.message);
+          }
         }
       }
 

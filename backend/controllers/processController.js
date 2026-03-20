@@ -46,9 +46,16 @@ export async function processAudio(req, res, next) {
     // Clean up Gemini file early once AI is done with it
     if (geminiFileName) await deleteGeminiFile(geminiFileName);
 
-    let diagramBuffer = null;
-    if (mermaidCode) {
-      diagramBuffer = await generateMermaidImage(mermaidCode);
+    const diagramBuffers = [];
+    const mermaidRegex = /```mermaid\s*([\s\S]*?)```/g;
+    let match;
+    while ((match = mermaidRegex.exec(notes)) !== null) {
+      const code = match[1].trim();
+      if (code) {
+        console.log("[PROCESS] Rendering Mermaid diagram block...");
+        const buffer = await generateMermaidImage(code);
+        if (buffer) diagramBuffers.push(buffer);
+      }
     }
 
     let visualImagePaths = [];
@@ -61,7 +68,7 @@ export async function processAudio(req, res, next) {
     pdfPath = await createNotesPdf({ 
       notes, 
       transcript, 
-      diagramBuffer, 
+      diagramBuffers, 
       visualImagePaths 
     });
     console.log(`[PROCESS] PDF created at: ${pdfPath}`);
