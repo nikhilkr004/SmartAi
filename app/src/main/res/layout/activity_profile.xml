@@ -193,7 +193,9 @@
         app:cardCornerRadius="32dp"
         app:cardElevation="8dp">
 
-        <include layout="@layout/layout_bottom_nav" />
+        <include
+            android:id="@+id/layoutBottomNav"
+            layout="@layout/layout_bottom_nav" />
     </com.google.android.material.card.MaterialCardView>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

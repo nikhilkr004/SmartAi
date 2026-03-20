@@ -13,6 +13,8 @@ import com.google.firebase.firestore.Query
 import com.studyai.smartclassroom.databinding.ActivityLibraryBinding
 import com.studyai.smartclassroom.ui.pdf.PdfViewerActivity
 import com.studyai.smartclassroom.utils.Constants
+import com.studyai.smartclassroom.ui.profile.ProfileActivity
+import com.studyai.smartclassroom.ui.dashboard.DashboardActivity
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -53,12 +55,12 @@ class LibraryActivity : AppCompatActivity() {
         }
 
         // Bottom Nav Wiring
-        binding.btnNavHome.setOnClickListener {
+        binding.layoutBottomNav.btnNavHome.setOnClickListener {
             // Dashboard is singleTop usually, but let's just finish for now or start
             finish()
         }
-        binding.btnNavProfile.setOnClickListener { 
-            startActivity(Intent(this, com.studyai.smartclassroom.ui.profile.ProfileActivity::class.java))
+        binding.layoutBottomNav.btnNavProfile.setOnClickListener { 
+            startActivity(Intent(this, ProfileActivity::class.java))
             finish()
         }
     }

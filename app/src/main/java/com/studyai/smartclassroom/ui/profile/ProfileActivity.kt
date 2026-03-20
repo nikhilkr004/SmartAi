@@ -14,7 +14,11 @@ import com.studyai.smartclassroom.ui.auth.LoginActivity
 import com.studyai.smartclassroom.ui.dashboard.HistoryAdapter
 import com.studyai.smartclassroom.ui.result.ResultActivity
 import com.studyai.smartclassroom.utils.Constants
-import com.studyai.smartclassroom.viewmodel.MainViewModel
+import com.google.firebase.firestore.Query
+import com.studyai.smartclassroom.R
+import com.studyai.smartclassroom.ui.library.LibraryActivity
+import com.studyai.smartclassroom.ui.pdf.PdfViewerActivity
+import com.studyai.smartclassroom.ui.dashboard.DashboardActivity
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -53,7 +57,7 @@ class ProfileActivity : AppCompatActivity() {
         binding.btnLogout.setOnClickListener {
             auth.signOut()
             val intent = Intent(this, DashboardActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             startActivity(intent)
             finish()
         }
@@ -68,8 +72,8 @@ class ProfileActivity : AppCompatActivity() {
         binding.rowPrivacy.ivRowIcon.setImageResource(R.drawable.ic_settings_privacy)
 
         // Bottom Nav Wiring
-        binding.btnNavHome.setOnClickListener { finish() }
-        binding.btnNavLibrary.setOnClickListener { 
+        binding.layoutBottomNav.btnNavHome.setOnClickListener { finish() }
+        binding.layoutBottomNav.btnNavLibrary.setOnClickListener { 
             startActivity(Intent(this, LibraryActivity::class.java))
             finish()
         }
