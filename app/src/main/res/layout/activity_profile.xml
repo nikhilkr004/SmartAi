@@ -208,6 +208,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:layout_width="match_parent"
+                        android:id="@+id/subscribe"
                         android:layout_height="48dp"
                         android:layout_marginTop="20dp"
                         android:backgroundTint="#003535"
@@ -406,6 +407,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
+                android:padding="5dp"
                 android:orientation="horizontal"
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/item_recent_view" />

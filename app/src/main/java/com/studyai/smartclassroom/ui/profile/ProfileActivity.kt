@@ -102,11 +102,36 @@ class ProfileActivity : AppCompatActivity() {
             startActivity(Intent(this, com.studyai.smartclassroom.ui.backup.CloudBackupActivity::class.java))
         }
 
-        // Bottom Nav Wiring
-        binding.layoutBottomNav.btnNavHome.setOnClickListener { finish() }
-        binding.layoutBottomNav.btnNavLibrary.setOnClickListener { 
-            startActivity(Intent(this, com.studyai.smartclassroom.ui.library.LibraryActivity::class.java))
+        setupBottomNav()
+
+        binding.subscribe.setOnClickListener {
+            showProUpgradeDialog()
+        }
+    }
+
+    private fun setupBottomNav() {
+        val nav = binding.layoutBottomNav
+        
+        // Highlight Profile
+        nav.btnNavProfile.setBackgroundResource(R.drawable.bg_badge_pdf)
+        nav.ivNavProfile.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.primary_teal))
+        nav.tvNavProfile.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_teal))
+        nav.tvNavProfile.setTypeface(null, android.graphics.Typeface.BOLD)
+
+        nav.btnNavHome.setOnClickListener {
+            startActivity(Intent(this, DashboardActivity::class.java))
             finish()
+        }
+        nav.btnNavLibrary.setOnClickListener {
+            startActivity(Intent(this, LibraryActivity::class.java))
+            finish()
+        }
+        nav.btnNavRecordings.setOnClickListener {
+            startActivity(Intent(this, LibraryActivity::class.java))
+            finish()
+        }
+        nav.btnNavProfile.setOnClickListener {
+            Toast.makeText(this, "You are already here! ✨", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -60,3 +60,30 @@ export async function uploadRecordingForUser({ userId, recordingPath }) {
   }
 }
 
+
+export async function getUserData(userId) {
+  try {
+    const admin = await initFirebase();
+    const db = admin.firestore();
+    const userDoc = await db.collection("users").doc(userId).get();
+    if (!userDoc.exists) return null;
+    return userDoc.data();
+  } catch (err) {
+    console.error(`[FIREBASE] Error fetching user ${userId}:`, err);
+    return null;
+  }
+}
+
+export async function getUserRecordingCount(userId) {
+  try {
+    const admin = await initFirebase();
+    const db = admin.firestore();
+    const snap = await db.collection("recordings")
+      .where("userId", "==", userId)
+      .get();
+    return snap.size;
+  } catch (err) {
+    console.error(`[FIREBASE] Error counting recordings for ${userId}:`, err);
+    return 0;
+  }
+}

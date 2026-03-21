@@ -13,8 +13,8 @@
         android:layout_weight="1"
         android:gravity="center"
         android:orientation="vertical">
-        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_menu_today" app:tint="#90A4AE" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Home" android:textSize="10sp" android:textColor="#90A4AE" />
+        <ImageView android:id="@+id/ivNavHome" android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_menu_today" app:tint="#90A4AE" />
+        <TextView android:id="@+id/tvNavHome" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Home" android:textSize="10sp" android:textColor="#90A4AE" />
     </LinearLayout>
 
     <LinearLayout
@@ -24,8 +24,8 @@
         android:layout_weight="1"
         android:gravity="center"
         android:orientation="vertical">
-        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_menu_agenda" app:tint="#90A4AE" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Library" android:textSize="10sp" android:textColor="#90A4AE" />
+        <ImageView android:id="@+id/ivNavLibrary" android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_menu_agenda" app:tint="#90A4AE" />
+        <TextView android:id="@+id/tvNavLibrary" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Library" android:textSize="10sp" android:textColor="#90A4AE" />
     </LinearLayout>
 
     <LinearLayout
@@ -35,8 +35,8 @@
         android:layout_weight="1"
         android:gravity="center"
         android:orientation="vertical">
-        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_btn_speak_now" app:tint="#90A4AE" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Recordings" android:textSize="10sp" android:textColor="#90A4AE" />
+        <ImageView android:id="@+id/ivNavRecordings" android:layout_width="24dp" android:layout_height="24dp" android:src="@android:drawable/ic_btn_speak_now" app:tint="#90A4AE" />
+        <TextView android:id="@+id/tvNavRecordings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="History" android:textSize="10sp" android:textColor="#90A4AE" />
     </LinearLayout>
 
     <LinearLayout
@@ -45,10 +45,9 @@
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:gravity="center"
-        android:background="@drawable/bg_badge_pdf"
         android:orientation="vertical">
-        <ImageView android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_profile" app:tint="@color/primary_teal" />
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Profile" android:textSize="10sp" android:textStyle="bold" android:textColor="@color/primary_teal" />
+        <ImageView android:id="@+id/ivNavProfile" android:layout_width="24dp" android:layout_height="24dp" android:src="@drawable/ic_profile" app:tint="#90A4AE" />
+        <TextView android:id="@+id/tvNavProfile" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Profile" android:textSize="10sp" android:textColor="#90A4AE" />
     </LinearLayout>
 
 </LinearLayout>

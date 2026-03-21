@@ -111,7 +111,7 @@ function addFooter(doc) {
   }
 }
 
-export async function createNotesPdf({ notes, transcript, diagramBuffers, visualImagePaths = [], topic = "Class Session" }) {
+export async function createNotesPdf({ notes, transcript, diagramBuffers, chartBuffers = [], visualImagePaths = [], topic = "Class Session", isPro = false }) {
   try {
     const tmpDir = getTmpDir();
     await ensureDir(tmpDir);
@@ -145,6 +145,9 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
 
       // --- PAGE 1: PREMIUM HERO ---
       doc.rect(0, 0, doc.page.width, 180).fill("#102027"); 
+      if (isPro) {
+        doc.fillColor("#FFD700").font("HeadingFont").fontSize(10).text("AERO PRO EXCLUSIVE", 60, 30);
+      }
       doc.fillColor("#ffffff").font("HeadingFont").fontSize(32).text("STUDY NOTES", 60, 50);
       doc.fontSize(14).font("BodyFont").text("MASTERCLASS SERIES", 60, 85);
       
@@ -173,6 +176,25 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, visual
             });
             doc.moveDown(2);
             doc.fillColor("#388E3C").font("HeadingFont").fontSize(10).text("STRUCTURAL ANALYSIS FLOW", { align: "center" });
+          } catch (e) { console.error(e); }
+        }
+      }
+
+      // --- CHARTS (Premium Data Visualization) ---
+      if (chartBuffers && chartBuffers.length > 0) {
+        for (let i = 0; i < chartBuffers.length; i++) {
+          doc.addPage();
+          doc.rect(0, 0, doc.page.width, 60).fill("#1A237E"); // Navy Blue for Charts
+          doc.fillColor("#ffffff").font("HeadingFont").fontSize(18).text(`ANALYTICAL DATA INSIGHT #${i+1}`, 60, 20);
+          
+          doc.moveDown(4);
+          try {
+            doc.image(chartBuffers[i], {
+               fit: [480, 400],
+               align: 'center'
+            });
+            doc.moveDown(2);
+            doc.fillColor("#3949AB").font("HeadingFont").fontSize(10).text("PREMIUM DATA VISUALIZATION", { align: "center" });
           } catch (e) { console.error(e); }
         }
       }

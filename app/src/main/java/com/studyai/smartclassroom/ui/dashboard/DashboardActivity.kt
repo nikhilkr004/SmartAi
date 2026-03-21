@@ -47,6 +47,7 @@ class DashboardActivity : AppCompatActivity() {
             openHistoryItem(id)
         }
     }
+    private val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
 
     private val recordingStoppedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -136,14 +137,35 @@ class DashboardActivity : AppCompatActivity() {
             binding.btnStop.isEnabled = false
         }
 
-        binding.btnNavProfile.setOnClickListener {
-            startActivity(Intent(this, com.studyai.smartclassroom.ui.profile.ProfileActivity::class.java))
+        binding.tvLogoName.setOnClickListener { 
+            // Refresh or scroll to top
         }
+        
+        setupBottomNav()
 
-        binding.btnNavLibrary.setOnClickListener {
+        binding.btnViewAll.setOnClickListener {
             startActivity(Intent(this, com.studyai.smartclassroom.ui.library.LibraryActivity::class.java))
         }
 
+        binding.btnGoProNow.setOnClickListener {
+            showProUpgradeDialog()
+        }
+
+        binding.btnUpload.setOnClickListener {
+            // Future: Local file picker
+            Toast.makeText(this, "Upload feature coming soon! 🚀", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.fabAi.setOnClickListener {
+            Toast.makeText(this, "Checking with Aero AI... 🤖", Toast.LENGTH_SHORT).show()
+        }
+
+        loadIntelligenceStats()
+        updateStreak()
+        setupObserversAndReceivers()
+    }
+
+    private fun setupObserversAndReceivers() {
         // Collect VM state.
         lifecycleScope.launch {
             vm.state.collectLatest { state ->
@@ -188,8 +210,97 @@ class DashboardActivity : AppCompatActivity() {
         registerReceiver(
             recordingStoppedReceiver,
             filter,
-            Context.RECEIVER_NOT_EXPORTED
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                Context.RECEIVER_NOT_EXPORTED
+            } else {
+                0
+            }
         )
+    }
+
+    private fun loadIntelligenceStats() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+
+        lifecycleScope.launch {
+            try {
+                // 1. Get User Data for Stats
+                val userDoc = db.collection("users").document(userId).get().await()
+                val planType = userDoc.getString("planType") ?: "free"
+                val streak = userDoc.getLong("studyStreak") ?: 0L
+                val aiSummaries = userDoc.getLong("aiSummariesCount") ?: 0L
+                
+                binding.tvStudyStreak.text = "$streak Days"
+                binding.tvAiSummaries.text = "$aiSummaries"
+
+                // 2. Storage Capacity (Sample logic based on 5 limit)
+                val recordingsSnapshot = db.collection("recordings")
+                    .whereEqualTo("userId", userId)
+                    .get()
+                    .await()
+                
+                val count = recordingsSnapshot.size()
+                val limit = 5
+                val percentage = if (planType == "pro") 0 else (count * 100) / limit
+                
+                binding.tvStoragePercent.text = if (planType == "pro") "unlimited" else "$percentage%"
+                binding.storageProgress.progress = percentage
+                
+                // Hide upgrade card if pro
+                if (planType == "pro") {
+                    binding.btnGoProNow.visibility = View.GONE
+                }
+
+            } catch (e: Exception) { }
+        }
+    }
+
+    private fun updateStreak() {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+        val docRef = db.collection("users").document(userId)
+
+        lifecycleScope.launch {
+            try {
+                val doc = docRef.get().await()
+                val lastActive = doc.getString("lastActiveDate") ?: ""
+                val currentStreak = doc.getLong("studyStreak") ?: 0L
+                
+                val today = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(java.util.Date())
+                val yesterday = java.util.Calendar.getInstance().apply { add(java.util.Calendar.DATE, -1) }.run {
+                    java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault()).format(time)
+                }
+
+                if (lastActive == today) return@launch // Already active today
+
+                val newStreak = if (lastActive == yesterday) currentStreak + 1 else 1L
+                docRef.update(mapOf(
+                    "studyStreak" to newStreak,
+                    "lastActiveDate" to today
+                ))
+                
+                binding.tvStudyStreak.text = "$newStreak Days"
+
+            } catch (e: Exception) { }
+        }
+    }
+
+    private fun showProUpgradeDialog() {
+        val dialog = com.google.android.material.bottomsheet.BottomSheetDialog(this, R.style.TransparentBottomSheetDialog)
+        val dialogBinding = com.studyai.smartclassroom.databinding.LayoutProUpgradeDialogBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.btnUpgradeNow.setOnClickListener {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@setOnClickListener
+            db.collection("users").document(userId).update(mapOf("planType" to "pro", "limit" to null))
+                .addOnSuccessListener {
+                    dialog.dismiss()
+                    Toast.makeText(this, "Premium Unlocked! 💎", Toast.LENGTH_LONG).show()
+                    loadIntelligenceStats()
+                }
+        }
+        dialogBinding.btnMaybeLater.setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
 
     override fun onStart() {
@@ -366,10 +477,36 @@ class DashboardActivity : AppCompatActivity() {
     }
 
     private fun openHistoryItem(id: String) {
-        val i = Intent(this, ResultActivity::class.java).apply {
+        val i = Intent(this, com.studyai.smartclassroom.ui.result.ResultActivity::class.java).apply {
             putExtra(Constants.EXTRA_RECORDING_ID, id)
         }
         startActivity(i)
+    }
+
+    private fun setupBottomNav() {
+        val nav = binding.layoutBottomNav
+        
+        // Highlight Home
+        nav.btnNavHome.setBackgroundResource(R.drawable.bg_badge_pdf)
+        nav.ivNavHome.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.primary_teal))
+        nav.tvNavHome.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_teal))
+        nav.tvNavHome.setTypeface(null, android.graphics.Typeface.BOLD)
+
+        nav.btnNavHome.setOnClickListener {
+            Toast.makeText(this, "You are already here! ✨", Toast.LENGTH_SHORT).show()
+        }
+        nav.btnNavLibrary.setOnClickListener {
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.library.LibraryActivity::class.java))
+            finish() // Use finish to keep back stack clean or as per app flow
+        }
+        nav.btnNavRecordings.setOnClickListener {
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.library.LibraryActivity::class.java))
+            finish()
+        }
+        nav.btnNavProfile.setOnClickListener {
+            startActivity(Intent(this, com.studyai.smartclassroom.ui.profile.ProfileActivity::class.java))
+            finish()
+        }
     }
 }
 

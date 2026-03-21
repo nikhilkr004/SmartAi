@@ -15,8 +15,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        // Set to local backend for physical device (Wi-Fi) testing.
-        buildConfigField("String", "BASE_URL", "\"https://smartai-production-8d67.up.railway.app/\"")
+        // Production backend on Railway
+        buildConfigField("String", "BASE_URL", "\"https://asdfsmartai.build/\"")
     }
 
     buildTypes {

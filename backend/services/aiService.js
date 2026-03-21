@@ -135,7 +135,11 @@ export async function generateStructuredNotes(transcript, videoFileData = null, 
       { text: "4. # DIAGRAM FLOWS: You MUST include at least TWO (2) distinct diagrams in Mermaid notation. Use ```mermaid blocks. \n" +
               "   - ONLY use 'graph TD' flowcharts. \n" +
               "   - Use simple arrows '-->' and clear labels like: A[Concept] --> B[Result]" },
-      { text: "5. # MASTERCLASS CHEAT SHEET: A final 'Too Long; Didn't Read' summary or a glossary of formulas/key terms at the end." },
+      { text: "5. # DATA VISUALIZATION: If the transcript contains any numbers, comparisons, or progress data, you MUST include a Chart.js configuration block. Use ```chartjs blocks. \n" +
+              "   - Provide ONLY the JSON object for the Chart.js 'config'. \n" +
+              "   - Example: { type: 'bar', data: { labels: ['Q1', 'Q2'], datasets: [{ label: 'Sales', data: [10, 20] }] }, options: { plugins: { title: { display: true, text: 'Custom Title' } } } } \n" +
+              "   - Keep it simple but professional." },
+      { text: "6. # MASTERCLASS CHEAT SHEET: A final 'Too Long; Didn't Read' summary or a glossary of formulas/key terms at the end." },
       { text: "CRITICAL RULES:" },
       { text: "- NO VERBOSITY: Use short sentences. Focus on conceptual clarity." },
       { text: "- FORMATTING: Use bold text for key terms. Use bulleted lists for all details." },

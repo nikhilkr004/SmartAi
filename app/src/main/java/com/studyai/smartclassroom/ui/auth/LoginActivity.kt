@@ -71,6 +71,14 @@ class LoginActivity : AppCompatActivity() {
             showLoading(true)
             signInLauncher.launch(googleClient.signInIntent)
         }
+
+        binding.btnAppleSignIn.setOnClickListener {
+            Toast.makeText(this, "Apple Sign-In is coming soon! 🍎", Toast.LENGTH_SHORT).show()
+        }
+
+        binding.btnMicrosoftSignIn.setOnClickListener {
+            Toast.makeText(this, "Microsoft Sign-In is coming soon! ☁️", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun firebaseAuthWithGoogle(idToken: String?) {
@@ -102,6 +110,8 @@ class LoginActivity : AppCompatActivity() {
     private fun showLoading(show: Boolean) {
         binding.progress.visibility = if (show) View.VISIBLE else View.GONE
         binding.btnGoogleSignIn.isEnabled = !show
+        binding.btnAppleSignIn.isEnabled = !show
+        binding.btnMicrosoftSignIn.isEnabled = !show
     }
 
     private fun goToDashboard() {

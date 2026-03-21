@@ -14,6 +14,20 @@ export async function processAudio(req, res, next) {
     const file = req.file;
     const { contentType = "General", topic: providedTopic } = req.body;
 
+    const { getUserData, getUserRecordingCount } = await import("../services/firebaseService.js");
+    const userData = await getUserData(userId);
+    const planType = userData?.planType || "free";
+    
+    if (planType === "free") {
+      const count = await getUserRecordingCount(userId);
+      if (count >= 5) {
+        console.warn(`[PROCESS] User ${userId} hit 5-PDF limit.`);
+        return res.status(403).json({ 
+          error: { message: "Free plan limit reached (5 PDFs). Please upgrade to Aero Pro for unlimited access." } 
+        });
+      }
+    }
+
     console.log(`[PROCESS] Starting processing for User: ${userId} | Type: ${contentType} | Topic: ${providedTopic || 'None'}`);
 
     if (!file) {
@@ -47,14 +61,32 @@ export async function processAudio(req, res, next) {
     if (geminiFileName) await deleteGeminiFile(geminiFileName);
 
     const diagramBuffers = [];
+    const chartBuffers = [];
     let match;
-    // Extract Mermaid blocks (Now the primary & only format for stability)
+
+    // 1. Extract Mermaid blocks for logic/flow diagrams
     const mermaidRegex = /```mermaid\s*([\s\S]*?)```/g;
     while ((match = mermaidRegex.exec(notes)) !== null) {
       const code = match[1].trim();
       if (code) {
         const buffer = await generateMermaidImage(code);
         if (buffer) diagramBuffers.push(buffer);
+      }
+    }
+
+    // 2. Extract Chart.js blocks for data/stats
+    const { generateChartImage } = await import("../utils/chartHelper.js");
+    const chartRegex = /```chartjs\s*([\s\S]*?)```/g;
+    while ((match = chartRegex.exec(notes)) !== null) {
+      try {
+        const configStr = match[1].trim();
+        // Use a safe parser or replace single quotes with double quotes for valid JSON
+        const sanitizedJson = configStr.replace(/'/g, '"');
+        const config = JSON.parse(sanitizedJson);
+        const buffer = await generateChartImage(config);
+        if (buffer) chartBuffers.push(buffer);
+      } catch (e) {
+        console.warn("[PROCESS] Failed to parse Chart.js block:", e.message);
       }
     }
 
@@ -70,8 +102,10 @@ export async function processAudio(req, res, next) {
       notes, 
       transcript, 
       diagramBuffers, 
+      chartBuffers, // New parameter
       visualImagePaths,
-      topic: providedTopic || lectureTopic
+      topic: providedTopic || lectureTopic,
+      isPro: planType === "pro"
     });
     console.log(`[PROCESS] PDF created at: ${pdfPath}`);
 

@@ -15,6 +15,7 @@ import com.studyai.smartclassroom.ui.pdf.PdfViewerActivity
 import com.studyai.smartclassroom.utils.Constants
 import com.studyai.smartclassroom.ui.profile.ProfileActivity
 import com.studyai.smartclassroom.ui.dashboard.DashboardActivity
+import com.studyai.smartclassroom.R
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -54,12 +55,30 @@ class LibraryActivity : AppCompatActivity() {
             adapter = recentAdapter
         }
 
-        // Bottom Nav Wiring
-        binding.layoutBottomNav.btnNavHome.setOnClickListener {
-            // Dashboard is singleTop usually, but let's just finish for now or start
+        setupBottomNav()
+    }
+
+    private fun setupBottomNav() {
+        val nav = binding.layoutBottomNav
+        
+        // Highlight Library
+        nav.btnNavLibrary.setBackgroundResource(R.drawable.bg_badge_pdf)
+        nav.ivNavLibrary.setColorFilter(androidx.core.content.ContextCompat.getColor(this, R.color.primary_teal))
+        nav.tvNavLibrary.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.primary_teal))
+        nav.tvNavLibrary.setTypeface(null, android.graphics.Typeface.BOLD)
+
+        nav.btnNavHome.setOnClickListener {
+            startActivity(Intent(this, DashboardActivity::class.java))
             finish()
         }
-        binding.layoutBottomNav.btnNavProfile.setOnClickListener { 
+        nav.btnNavLibrary.setOnClickListener {
+            Toast.makeText(this, "You are already here! ✨", Toast.LENGTH_SHORT).show()
+        }
+        nav.btnNavRecordings.setOnClickListener {
+            // Already in Library/History
+            Toast.makeText(this, "You are already in your collection! 📚", Toast.LENGTH_SHORT).show()
+        }
+        nav.btnNavProfile.setOnClickListener {
             startActivity(Intent(this, ProfileActivity::class.java))
             finish()
         }

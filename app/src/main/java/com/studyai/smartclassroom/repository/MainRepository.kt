@@ -28,13 +28,37 @@ class MainRepository(
 
     suspend fun saveUserProfile(name: String?, email: String?, photoUrl: String?) {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
-        val payload = hashMapOf(
-            "name" to (name ?: ""),
-            "email" to (email ?: ""),
-            "profilePic" to (photoUrl ?: ""),
-            "updatedAt" to FieldValue.serverTimestamp()
-        )
-        db.collection(Constants.COLLECTION_USERS).document(uid).set(payload).await()
+        val docRef = db.collection(Constants.COLLECTION_USERS).document(uid)
+        val snap = docRef.get().await()
+
+        if (!snap.exists()) {
+            // New User Initialization
+            val payload = hashMapOf(
+                "name" to (name ?: ""),
+                "email" to (email ?: ""),
+                "profilePic" to (photoUrl ?: ""),
+                "planType" to "free",
+                "studyStreak" to 0L,
+                "aiSummariesCount" to 0L,
+                "lastActiveDate" to "",
+                "limit" to 5L,
+                "createdAt" to FieldValue.serverTimestamp(),
+                "updatedAt" to FieldValue.serverTimestamp()
+            )
+            docRef.set(payload).await()
+            Log.d(Constants.TAG, "User profile initialized for new user: $uid")
+        } else {
+            // Existing User - Update profile sync
+            val updates = mutableMapOf<String, Any>(
+                "updatedAt" to FieldValue.serverTimestamp()
+            )
+            name?.let { updates["name"] = it }
+            email?.let { updates["email"] = it }
+            photoUrl?.let { updates["profilePic"] = it }
+            
+            docRef.update(updates).await()
+            Log.d(Constants.TAG, "User profile synced for existing user: $uid")
+        }
     }
 
     suspend fun uploadRecordingToBackend(file: File, contentType: String, topic: String): ResponseModel {
@@ -96,6 +120,11 @@ class MainRepository(
         )
         Log.d(Constants.TAG, "Saving result to Firestore for user: $uid")
         db.collection(Constants.COLLECTION_RECORDINGS).document(id).set(payload).await()
+        
+        // Increment AI Summary Count for the user
+        db.collection(Constants.COLLECTION_USERS).document(uid)
+            .update("aiSummariesCount", FieldValue.increment(1))
+            
         Log.i(Constants.TAG, "FIRESTORE SUCCESS: Record saved with ID: $id")
         return id
     }
