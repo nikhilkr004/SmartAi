@@ -4,6 +4,7 @@ import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseSe
 import { safeUnlink } from "../utils/fileHelper.js";
 import { generateD2Image, generateMermaidImage } from "../utils/mermaidHelper.js";
 import { extractMultipleFrames } from "../utils/visualHelper.js";
+import fs from "fs";
 
 export async function processAudio(req, res, next) {
   let audioPath;
