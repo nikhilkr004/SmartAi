@@ -72,19 +72,11 @@ export async function generateStudyMaterials(videoPath, contentType = "General",
     if (fileState.state === "FAILED") throw new Error("Gemini failed to process file.");
 
     const client = getClient();
-    // Using JSON Schema for single-turn extraction
+    // Use prompt-based JSON instead of strict schema for better compatibility
     const model = client.getGenerativeModel({ 
       model: "gemini-1.5-flash",
       generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "object",
-          properties: {
-            transcript: { type: "string" },
-            notes: { type: "string" }
-          },
-          required: ["transcript", "notes"]
-        }
+        responseMimeType: "application/json"
       }
     });
 
@@ -93,19 +85,25 @@ export async function generateStudyMaterials(videoPath, contentType = "General",
       You are a World-Class Academic Tutor. 
       Analyze the attached audio comprehensively.
       
-      TASK 1: Provide a highly accurate transcription.
-      TASK 2: Create "Masterclass" quality study notes based ONLY on this audio.
+      RETURN A JSON OBJECT WITH THESE EXACT KEYS:
+      {
+        "transcript": "Full accurate transcription text...",
+        "notes": "Masterclass study notes in Markdown..."
+      }
+
+      TASK 1: Provide a highly accurate transcription in the "transcript" field.
+      TASK 2: Create "Masterclass" quality study notes in the "notes" field.
       
       CONTEXT: ${contentType}${topic ? ` | TOPIC: ${topic}` : ""}.
       
-      NOTES STRUCTURE:
-      1. # EXECUTIVE SUMMARY: 3 punchy points.
-      2. # DEEP DIVE: Concepts with ## headings and [TIP], [DEF], [HINT], [EX] callouts.
-      3. # DIAGRAM FLOWS: Include TWO (2) \`\`\`mermaid graph TD blocks.
-      4. # DATA VISUALIZATION: Include ONE (1) \`\`\`chartjs block if data exists.
-      5. # MASTERCLASS CHEAT SHEET: Final glossary/summary.
-      
-      CRITICAL: Use high-impact, conceptual language. Avoid verbosity.
+      NOTES STRUCTURE (Markdown):
+      1. # EXECUTIVE SUMMARY
+      2. # DEEP DIVE (with ## headings and [TIP], [DEF], [HINT], [EX])
+      3. # DIAGRAM FLOWS (Include TWO \`\`\`mermaid blocks)
+      4. # DATA VISUALIZATION (Include ONE \`\`\`chartjs block)
+      5. # MASTERCLASS CHEAT SHEET
+
+      CRITICAL: Ensure the response is VALID JSON. Escape newlines in the strings.
     `;
 
     const result = await model.generateContent([
