@@ -1,5 +1,6 @@
 package com.studyai.smartclassroom.viewmodel
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -29,12 +30,46 @@ class MainViewModel(
             val recordingId: String
         ) : UiState()
         data class HistoryLoaded(val items: List<Map<String, Any?>>) : UiState()
+        data class UserDataLoaded(val data: Map<String, Any?>) : UiState()
+        data object ProfileUpdated : UiState()
     }
 
     private val _state = MutableStateFlow<UiState>(UiState.Idle)
     val state: StateFlow<UiState> = _state.asStateFlow()
 
     fun currentUserId(): String? = repo.currentUserId()
+
+    fun fetchUserProfile() {
+        viewModelScope.launch {
+            try {
+                _state.value = UiState.Loading
+                val data = repo.fetchUserProfile()
+                if (data != null) {
+                    _state.value = UiState.UserDataLoaded(data)
+                } else {
+                    _state.value = UiState.Idle
+                }
+            } catch (e: Exception) {
+                _state.value = UiState.Error(e.message ?: "Failed to fetch profile")
+            }
+        }
+    }
+
+    fun updateProfile(name: String?, photoUri: Uri?) {
+        viewModelScope.launch {
+            try {
+                _state.value = UiState.Loading
+                var photoUrl: String? = null
+                if (photoUri != null) {
+                    photoUrl = repo.uploadProfileImage(photoUri)
+                }
+                repo.updateUserProfile(name, photoUrl)
+                _state.value = UiState.ProfileUpdated
+            } catch (e: Exception) {
+                _state.value = UiState.Error(e.message ?: "Failed to update profile")
+            }
+        }
+    }
 
     fun saveUserProfile(name: String?, email: String?, photoUrl: String?) {
         viewModelScope.launch {

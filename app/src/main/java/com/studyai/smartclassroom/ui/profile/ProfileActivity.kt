@@ -30,11 +30,16 @@ import android.util.TypedValue
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.studyai.smartclassroom.databinding.LayoutProUpgradeDialogBinding
 
+import coil.load
+import com.studyai.smartclassroom.viewmodel.MainViewModel
+import android.widget.EditText
+
 class ProfileActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityProfileBinding
     private val auth = FirebaseAuth.getInstance()
     private val db = FirebaseFirestore.getInstance()
+    private val vm: MainViewModel by lazy { MainViewModel() }
 
     private val favoritesAdapter = com.studyai.smartclassroom.ui.library.RecentlyViewedAdapter { recordingId ->
         openPdfViewer(recordingId)
@@ -42,14 +47,7 @@ class ProfileActivity : AppCompatActivity() {
 
     private val imagePicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {
-            binding.ivAvatar.setImageURI(it)
-            // Persist to Firestore
-            val userId = auth.currentUser?.uid ?: return@let
-            db.collection("users").document(userId)
-                .update("profileImageUrl", it.toString())
-                .addOnSuccessListener {
-                    Toast.makeText(this, "Profile picture synced!", Toast.LENGTH_SHORT).show()
-                }
+            vm.updateProfile(null, it)
         }
     }
 
@@ -58,10 +56,41 @@ class ProfileActivity : AppCompatActivity() {
         binding = ActivityProfileBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        setupObservers()
         setupUI()
-        loadUserData()
+        vm.fetchUserProfile()
         loadStats()
         loadFavoritesHorizontal()
+    }
+
+    private fun setupObservers() {
+        lifecycleScope.launch {
+            vm.state.collect { state ->
+                when (state) {
+                    is MainViewModel.UiState.Loading -> { /* Show global loader if needed */ }
+                    is MainViewModel.UiState.UserDataLoaded -> {
+                        val name = state.data["name"] as? String ?: ""
+                        val pic = state.data["profilePic"] as? String ?: ""
+                        binding.tvUserName.text = name
+                        if (pic.isNotEmpty()) {
+                            binding.ivAvatar.load(pic) {
+                                crossfade(true)
+                                placeholder(R.drawable.ic_profile)
+                                error(R.drawable.ic_profile)
+                            }
+                        }
+                    }
+                    is MainViewModel.UiState.ProfileUpdated -> {
+                        Toast.makeText(this@ProfileActivity, "Profile updated successfully! ✨", Toast.LENGTH_SHORT).show()
+                        vm.fetchUserProfile()
+                    }
+                    is MainViewModel.UiState.Error -> {
+                        Toast.makeText(this@ProfileActivity, state.message, Toast.LENGTH_LONG).show()
+                    }
+                    else -> {}
+                }
+            }
+        }
     }
 
     private fun setupUI() {
@@ -73,7 +102,7 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         binding.btnEditAvatar.setOnClickListener { imagePicker.launch("image/*") }
-        binding.btnEditProfile.setOnClickListener { imagePicker.launch("image/*") }
+        binding.btnEditProfile.setOnClickListener { showEditProfileDialog() }
 
         binding.btnSeeAllFavorites.setOnClickListener {
             startActivity(Intent(this, com.studyai.smartclassroom.ui.library.LibraryActivity::class.java))
@@ -107,6 +136,32 @@ class ProfileActivity : AppCompatActivity() {
         binding.subscribe.setOnClickListener {
             showProUpgradeDialog()
         }
+    }
+
+    private fun showEditProfileDialog() {
+        val currentName = binding.tvUserName.text.toString()
+        val input = EditText(this).apply {
+            setText(currentName)
+            setHint("Enter your name")
+            setPadding(48, 32, 48, 32)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Edit Profile")
+            .setMessage("Update your display name")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                val newName = input.text.toString().trim()
+                if (newName.isNotEmpty()) {
+                    vm.updateProfile(newName, null)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun loadUserData() {
+        // Now handled by setupObservers + vm.fetchUserProfile()
     }
 
     private fun setupBottomNav() {
@@ -157,12 +212,6 @@ class ProfileActivity : AppCompatActivity() {
         }
 
         dialog.show()
-    }
-
-    private fun loadUserData() {
-        val user = auth.currentUser
-        binding.tvUserName.text = user?.displayName ?: "Scholar Student"
-        // Title placeholder as per mockup
     }
 
     private fun loadStats() {

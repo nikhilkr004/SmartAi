@@ -5,6 +5,7 @@ import android.util.Log
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.studyai.smartclassroom.model.ResponseModel
 import com.studyai.smartclassroom.network.RetrofitClient
 import com.studyai.smartclassroom.utils.Constants
@@ -21,10 +22,32 @@ import java.util.UUID
  */
 class MainRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val storage: FirebaseStorage = FirebaseStorage.getInstance()
 ) {
 
     fun currentUserId(): String? = auth.currentUser?.uid
+
+    suspend fun uploadProfileImage(uri: Uri): String {
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
+        val ref = storage.reference.child("profile_images/$uid.jpg")
+        ref.putFile(uri).await()
+        return ref.downloadUrl.await().toString()
+    }
+
+    suspend fun updateUserProfile(name: String?, photoUrl: String?) {
+        val uid = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
+        val docRef = db.collection(Constants.COLLECTION_USERS).document(uid)
+        
+        val updates = mutableMapOf<String, Any>(
+            "updatedAt" to FieldValue.serverTimestamp()
+        )
+        name?.let { updates["name"] = it }
+        photoUrl?.let { updates["profilePic"] = it }
+        
+        docRef.update(updates).await()
+        Log.d(Constants.TAG, "User profile updated for user: $uid")
+    }
 
     suspend fun saveUserProfile(name: String?, email: String?, photoUrl: String?) {
         val uid = auth.currentUser?.uid ?: throw IllegalStateException("User not logged in")
@@ -145,6 +168,12 @@ class MainRepository(
     suspend fun getRecordingById(id: String): Map<String, Any?>? {
         val doc = db.collection(Constants.COLLECTION_RECORDINGS).document(id).get().await()
         return doc.data?.plus(mapOf("id" to doc.id))
+    }
+
+    suspend fun fetchUserProfile(): Map<String, Any?>? {
+        val uid = auth.currentUser?.uid ?: return null
+        val doc = db.collection(Constants.COLLECTION_USERS).document(uid).get().await()
+        return doc.data
     }
 }
 

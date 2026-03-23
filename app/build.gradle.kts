@@ -51,6 +51,7 @@ dependencies {
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage")
 
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
@@ -70,5 +71,6 @@ dependencies {
 
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("de.hdodenhof:circleimageview:3.1.0")
+    implementation("io.coil-kt:coil:2.7.0")
 }
 
