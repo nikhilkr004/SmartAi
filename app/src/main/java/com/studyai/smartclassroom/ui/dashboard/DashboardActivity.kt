@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import com.studyai.smartclassroom.R
+import com.studyai.smartclassroom.utils.NotificationHelper
 import java.io.File
 
 /**
@@ -192,7 +193,7 @@ class DashboardActivity : AppCompatActivity() {
                         
                         val resp = state.response
                         // Trigger Notification
-                        com.studyai.smartclassroom.utils.NotificationHelper.showPdfReadyNotification(
+                        NotificationHelper.showPdfReadyNotification(
                             context = this@DashboardActivity,
                             title = selectedTopic.ifEmpty { "New Study Session" },
                             transcript = resp.transcript,
@@ -217,6 +218,9 @@ class DashboardActivity : AppCompatActivity() {
                         showLoading(false)
                         adapter.submit(state.items)
                     }
+
+                    MainViewModel.UiState.ProfileUpdated -> TODO()
+                    is MainViewModel.UiState.UserDataLoaded -> TODO()
                 }
             }
         }

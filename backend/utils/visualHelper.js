@@ -66,3 +66,34 @@ export async function extractMultipleFrames(videoPath, timestamps) {
   
   return imagePaths;
 }
+
+/**
+ * Extracts audio from a video file and saves it as an MP3.
+ * Extremely useful for reducing Gemini upload size.
+ * @param {string} videoPath 
+ * @returns {Promise<string>} - Path to the extracted audio file.
+ */
+export async function extractAudio(videoPath) {
+  const tmpDir = getTmpDir();
+  await ensureDir(tmpDir);
+  
+  const outputFileName = `audio_${uuidv4()}.mp3`;
+  const outputPath = path.join(tmpDir, outputFileName);
+
+  return new Promise((resolve, reject) => {
+    console.log(`[VISUAL] Extracting audio from ${videoPath}...`);
+    
+    ffmpeg(videoPath)
+      .toFormat('mp3')
+      .audioBitrate('128k')
+      .on('end', () => {
+        console.log(`[VISUAL] Audio extracted to ${outputPath}`);
+        resolve(outputPath);
+      })
+      .on('error', (err) => {
+        console.error(`[VISUAL ERROR] Audio extraction failed: ${err.message}`);
+        reject(err);
+      })
+      .save(outputPath);
+  });
+}

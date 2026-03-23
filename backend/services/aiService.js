@@ -3,6 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
 import path from "path";
 import { safeUnlink } from "../utils/fileHelper.js";
+import { extractAudio } from "../utils/visualHelper.js";
 
 function requireGeminiKey() {
   if (!process.env.GEMINI_API_KEY) {
@@ -36,32 +37,35 @@ export async function deleteGeminiFile(fileName) {
   }
 }
 
-export async function transcribeAudio(audioPath) {
+export async function transcribeAudio(videoPath) {
   let uploadResult = null;
+  let tempAudioPath = null;
   const fileManager = getFileManager();
   
   try {
-    const stats = fs.statSync(audioPath);
-    console.log(`[GEMINI] File: ${audioPath} (${stats.size} bytes)`);
+    const stats = fs.statSync(videoPath);
+    console.log(`[GEMINI] Original Video: ${videoPath} (${stats.size} bytes)`);
+
+    // Extract audio to reduce upload size (69MB -> ~3MB)
+    tempAudioPath = await extractAudio(videoPath);
+    const audioStats = fs.statSync(tempAudioPath);
+    console.log(`[GEMINI] Extracted Audio: ${tempAudioPath} (${audioStats.size} bytes)`);
 
     console.log(`[GEMINI] Starting file upload to Gemini...`);
     const startTime = Date.now();
     
-    // Guess mime type from extension
-    const ext = path.extname(audioPath).toLowerCase();
-    let mimeType = "audio/mp3";
-    if (ext === ".wav") mimeType = "audio/wav";
-    else if (ext === ".m4a") mimeType = "audio/m4a";
-    else if (ext === ".ogg") mimeType = "audio/ogg";
-    else if (ext === ".webm") mimeType = "audio/webm";
-    else if (ext === ".mp4") mimeType = "video/mp4";
+    const mimeType = "audio/mp3";
 
-    uploadResult = await fileManager.uploadFile(audioPath, {
+    uploadResult = await fileManager.uploadFile(tempAudioPath, {
       mimeType: mimeType,
-      displayName: path.basename(audioPath),
+      displayName: path.basename(tempAudioPath),
     });
     
     console.log(`[GEMINI] Upload successful. URI: ${uploadResult.file.uri}. Waiting for processing...`);
+
+    // Clean up local temp audio early
+    await safeUnlink(tempAudioPath);
+    tempAudioPath = null;
 
     // Wait for the file to finish processing (crucial for video/mp4 files)
     let fileState = await fileManager.getFile(uploadResult.file.name);

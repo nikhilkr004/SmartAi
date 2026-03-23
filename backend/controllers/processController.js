@@ -39,17 +39,23 @@ export async function processAudio(req, res, next) {
     audioPath = file.path;
     console.log(`[PROCESS] File received: ${file.originalname} -> ${audioPath} (${file.size} bytes)`);
 
-    // Upload recording to Firebase Storage before it gets deleted.
-    console.log("[PROCESS] Uploading original recording to Firebase Storage...");
-    const videoUrl = await uploadRecordingForUser({ userId, recordingPath: audioPath });
-    console.log(`[PROCESS] Recording uploaded. URL: ${videoUrl}`);
-    
-    console.log("[PROCESS] Starting Multi-model Analysis...");
+    console.log("[PROCESS] Starting Parallel Operations: Firebase Upload & Gemini Transcription...");
+    const startTime = Date.now();
+
+    // Parallelize the two heaviest network operations
+    const [videoUrl, transcriptionResult] = await Promise.all([
+      uploadRecordingForUser({ userId, recordingPath: audioPath }),
+      transcribeAudio(audioPath)
+    ]);
+
     const { 
       transcript, 
       videoFileData, 
       geminiFileName 
-    } = await transcribeAudio(audioPath);
+    } = transcriptionResult;
+
+    console.log(`[PROCESS] Parallel operations complete in ${((Date.now() - startTime)/1000).toFixed(1)}s.`);
+    console.log(`[PROCESS] Recording URL: ${videoUrl}`);
     console.log("[PROCESS] Transcription complete.");
 
     console.log("[PROCESS] Generating structured notes and identifying visual moments...");
