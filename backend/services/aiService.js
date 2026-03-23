@@ -143,9 +143,10 @@ export async function generateStructuredNotes(transcript, videoFileData = null, 
               "   - Keep it simple but professional." },
       { text: "6. # MASTERCLASS CHEAT SHEET: A final 'Too Long; Didn't Read' summary or a glossary of formulas/key terms at the end." },
       { text: "CRITICAL RULES:" },
-      { text: "- NO VERBOSITY: Use short sentences. Focus on conceptual clarity." },
+      { text: "- NO VERBOSITY: Use short sentences. MAX 5 bullet points per sub-topic. Focus on conceptual clarity." },
       { text: "- FORMATTING: Use bold text for key terms. Use bulleted lists for all details." },
       { text: "- VISUAL LAYOUT: Every major section MUST start with a '#' heading." },
+      { text: "- CLEAN BLOCKS: Ensure ```mermaid and ```chartjs blocks start immediately after the heading, with NO extra leading or trailing whitespace inside the backticks." },
       { text: "- LANGUAGE: If 'Coding', provide structured code blocks in the detected language. Stick to one language only." }
     ];
 

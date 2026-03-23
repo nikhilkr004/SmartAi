@@ -94,6 +94,8 @@ export async function processAudio(req, res, next) {
       }
     }
 
+    console.log(`[PROCESS] Extraction complete. Diagrams: ${diagramBuffers.length}, Charts: ${chartBuffers.length}`);
+
     // Screen moments extraction removed as per user request for more diagrams/hints instead.
     const visualImagePaths = [];
 
@@ -106,12 +108,12 @@ export async function processAudio(req, res, next) {
       notes, 
       transcript, 
       diagramBuffers, 
-      chartBuffers, // New parameter
+      chartBuffers, 
       visualImagePaths,
       topic: providedTopic || lectureTopic,
       isPro: planType === "pro"
     });
-    console.log(`[PROCESS] PDF created at: ${pdfPath}`);
+    console.log(`[PROCESS] PDF Created! Size: ${fs.statSync(pdfPath).size} bytes`);
 
     console.log("[PROCESS] Uploading PDF to Firebase Storage...");
     const pdfUrl = await uploadPdfForUser({ userId, pdfPath });

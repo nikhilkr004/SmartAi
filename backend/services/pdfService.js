@@ -46,8 +46,8 @@ function drawCallout(doc, type, content) {
 }
 
 function renderSmartContent(doc, text) {
-  // Scrub diagram blocks for text rendering
-  const cleanBase = text.replace(/```(mermaid|d2)[\s\S]*?```/g, "").trim();
+  // Hardened Scrubber: Remove visual blocks (mermaid, chartjs, d2) regardless of case or spacing
+  const cleanBase = text.replace(/```\s*(mermaid|d2|chartjs)[\s\S]*?```/gi, "").trim();
 
   // Split by headings and callouts
   const lines = cleanBase.split("\n");
@@ -161,41 +161,39 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, chartB
       // --- CONTENT ---
       renderSmartContent(doc, notes || "");
 
-      // --- DIAGRAMS (Integrated Hero Style) ---
-      if (diagramBuffers && diagramBuffers.length > 0) {
-        for (let i = 0; i < diagramBuffers.length; i++) {
-          doc.addPage();
-          doc.rect(0, 0, doc.page.width, 60).fill("#1B5E20");
-          doc.fillColor("#ffffff").font("HeadingFont").fontSize(18).text(`CONCEPTUAL VISUAL #${i+1}`, 60, 20);
-          
-          doc.moveDown(4);
-          try {
-            doc.image(diagramBuffers[i], {
-               fit: [480, 450],
-               align: 'center'
-            });
-            doc.moveDown(2);
-            doc.fillColor("#388E3C").font("HeadingFont").fontSize(10).text("STRUCTURAL ANALYSIS FLOW", { align: "center" });
-          } catch (e) { console.error(e); }
-        }
-      }
+      // --- VISUAL ANALYSIS (Integrated Hero Style) ---
+      const allVisuals = [
+        ...(diagramBuffers || []).map(b => ({ buffer: b, type: 'DIAGRAM', color: "#1B5E20", label: "CONCEPTUAL VISUAL" })),
+        ...(chartBuffers || []).map(b => ({ buffer: b, type: 'CHART', color: "#1A237E", label: "DATA INSIGHT" }))
+      ];
 
-      // --- CHARTS (Premium Data Visualization) ---
-      if (chartBuffers && chartBuffers.length > 0) {
-        for (let i = 0; i < chartBuffers.length; i++) {
-          doc.addPage();
-          doc.rect(0, 0, doc.page.width, 60).fill("#1A237E"); // Navy Blue for Charts
-          doc.fillColor("#ffffff").font("HeadingFont").fontSize(18).text(`ANALYTICAL DATA INSIGHT #${i+1}`, 60, 20);
+      if (allVisuals.length > 0) {
+        doc.addPage();
+        doc.rect(0, 0, doc.page.width, 50).fill("#102027");
+        doc.fillColor("#ffffff").font("HeadingFont").fontSize(18).text("VISUAL ANALYSIS & DATA", 60, 15);
+        doc.y = 80;
+
+        for (let i = 0; i < allVisuals.length; i++) {
+          const item = allVisuals[i];
+          const imgHeight = 320; // Estimated height with padding
           
-          doc.moveDown(4);
+          if (doc.y + imgHeight > 750) {
+            doc.addPage();
+            doc.y = 40; 
+          }
+
           try {
-            doc.image(chartBuffers[i], {
-               fit: [480, 400],
+            const startY = doc.y;
+            doc.image(item.buffer, {
+               fit: [480, 280],
                align: 'center'
             });
+            doc.moveDown(1);
+            doc.fillColor(item.color).font("HeadingFont").fontSize(9).text(`${item.label} #${i+1}`, { align: "center" });
             doc.moveDown(2);
-            doc.fillColor("#3949AB").font("HeadingFont").fontSize(10).text("PREMIUM DATA VISUALIZATION", { align: "center" });
-          } catch (e) { console.error(e); }
+          } catch (e) {
+            console.error("[PDF] Image render error:", e.message);
+          }
         }
       }
 
