@@ -1,4 +1,4 @@
-import { transcribeAudio, generateStructuredNotes, deleteGeminiFile } from "../services/aiService.js";
+import { generateStudyMaterials, deleteGeminiFile } from "../services/aiService.js";
 import { createNotesPdf } from "../services/pdfService.js";
 import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseService.js";
 import { safeUnlink } from "../utils/fileHelper.js";
@@ -39,49 +39,40 @@ export async function processAudio(req, res, next) {
     audioPath = file.path;
     console.log(`[PROCESS] File received: ${file.originalname} -> ${audioPath} (${file.size} bytes)`);
 
-    console.log("[PROCESS] Starting Parallel Operations: Firebase Upload & Gemini Transcription...");
+    console.log("[PROCESS] Starting Parallel Operations: Firebase Upload & AI Material Generation...");
     const startTime = Date.now();
 
     // Parallelize the two heaviest network operations
-    const [videoUrl, transcriptionResult] = await Promise.all([
+    const [videoUrl, aiResult] = await Promise.all([
       uploadRecordingForUser({ userId, recordingPath: audioPath }),
-      transcribeAudio(audioPath)
+      generateStudyMaterials(audioPath, contentType, providedTopic)
     ]);
 
     const { 
       transcript, 
+      notes,
       videoFileData, 
       geminiFileName 
-    } = transcriptionResult;
+    } = aiResult;
 
-    console.log(`[PROCESS] Parallel operations complete in ${((Date.now() - startTime)/1000).toFixed(1)}s.`);
-    console.log(`[PROCESS] Recording URL: ${videoUrl}`);
-    console.log("[PROCESS] Transcription complete.");
-
-    console.log("[PROCESS] Generating structured notes and identifying visual moments...");
-    const { 
-      notes, 
-      visualTimestamps 
-    } = await generateStructuredNotes(transcript, videoFileData, contentType, providedTopic);
+    console.log(`[PROCESS] Core operations complete in ${((Date.now() - startTime)/1000).toFixed(1)}s.`);
     
     // Clean up Gemini file early once AI is done with it
     if (geminiFileName) await deleteGeminiFile(geminiFileName);
 
-    const diagramBuffers = [];
-    const chartBuffers = [];
-    let match;
+    console.log("[PROCESS] Extracting Visuals (Parallel)...");
+    const diagramTasks = [];
+    const chartTasks = [];
 
-    // 1. Extract Mermaid blocks for logic/flow diagrams
+    // 1. Prepare Mermaid tasks
     const mermaidRegex = /```mermaid\s*([\s\S]*?)```/g;
+    let match;
     while ((match = mermaidRegex.exec(notes)) !== null) {
       const code = match[1].trim();
-      if (code) {
-        const buffer = await generateMermaidImage(code);
-        if (buffer) diagramBuffers.push(buffer);
-      }
+      if (code) diagramTasks.push(generateMermaidImage(code));
     }
 
-    // 2. Extract Chart.js blocks for data/stats
+    // 2. Prepare Chart.js tasks
     const { generateChartImage } = await import("../utils/chartHelper.js");
     const chartRegex = /```chartjs\s*([\s\S]*?)```/g;
     while ((match = chartRegex.exec(notes)) !== null) {
@@ -90,16 +81,18 @@ export async function processAudio(req, res, next) {
         let config;
         try {
           config = JSON.parse(configStr);
+          chartTasks.push(generateChartImage(config));
         } catch (parseError) {
-          console.warn("[PROCESS] Failed to parse Chart.js block (Likely invalid JSON):", parseError.message);
+          console.warn("[PROCESS] Failed to parse Chart.js JSON");
         }
-        
-        const buffer = await generateChartImage(config);
-        if (buffer) chartBuffers.push(buffer);
       } catch (e) {
-        console.warn("[PROCESS] Failed to parse Chart.js block:", e.message);
+        console.warn("[PROCESS] Failed to prepare Chart.js task");
       }
     }
+
+    // Execute all image generation in parallel
+    const diagramBuffers = (await Promise.all(diagramTasks)).filter(b => b);
+    const chartBuffers = (await Promise.all(chartTasks)).filter(b => b);
 
     console.log(`[PROCESS] Extraction complete. Diagrams: ${diagramBuffers.length}, Charts: ${chartBuffers.length}`);
 
