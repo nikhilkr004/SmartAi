@@ -2,9 +2,41 @@ import fs from "fs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { Anthropic } from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import path from "path";
 import { safeUnlink } from "../utils/fileHelper.js";
 import { extractAudio } from "../utils/visualHelper.js";
+
+// --- OpenAI Configuration (Whisper) ---
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn("[OPENAI] API Key not found.");
+    return null;
+  }
+  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+}
+
+export async function transcribeWithWhisper(audioPath) {
+  const openai = getOpenAIClient();
+  if (!openai) return null;
+
+  console.log(`[OPENAI] Transcribing ${audioPath}...`);
+  const startTime = Date.now();
+  
+  try {
+    const transcription = await openai.audio.transcriptions.create({
+      file: fs.createReadStream(audioPath),
+      model: "whisper-1",
+    });
+
+    const duration = (Date.now() - startTime) / 1000;
+    console.log(`[OPENAI] Transcription complete in ${duration}s`);
+    return transcription.text;
+  } catch (err) {
+    console.error("[OPENAI ERROR]", err);
+    return null;
+  }
+}
 
 // --- Claude Configuration ---
 function getClaudeClient() {

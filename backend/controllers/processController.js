@@ -1,4 +1,4 @@
-import { generateStudyMaterials, deleteGeminiFile } from "../services/aiService.js";
+import { generateStudyMaterials, deleteGeminiFile, transcribeWithWhisper, generateClaudeNotes } from "../services/aiService.js";
 import { createNotesPdf } from "../services/pdfService.js";
 import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseService.js";
 import { safeUnlink } from "../utils/fileHelper.js";
@@ -39,38 +39,48 @@ export async function processAudio(req, res, next) {
     audioPath = file.path;
     console.log(`[PROCESS] File received: ${file.originalname} -> ${audioPath} (${file.size} bytes)`);
 
-    console.log("[PROCESS] Starting Parallel Operations: Firebase Upload & AI Material Generation...");
     const startTime = Date.now();
 
-    // Parallelize the two heaviest network operations
-    const [videoUrl, aiResult] = await Promise.all([
-      uploadRecordingForUser({ userId, recordingPath: audioPath }),
-      generateStudyMaterials(audioPath, contentType, providedTopic)
-    ]);
+    // --- STEP 1: TRANSCRIPTION (Priority: OpenAI Whisper -> Gemini) ---
+    console.log("[PROCESS] Attempting Transcription (Whisper)...");
+    let transcript = await transcribeWithWhisper(audioPath);
+    let geminiNotesFallback = null;
+    let geminiFileName = null; // Track for cleanup
 
-    const { 
-      transcript, 
-      notes: geminiNotes, // Use this as fallback
-      videoFileData, 
-      geminiFileName 
-    } = aiResult;
-
-    console.log(`[PROCESS] Core operations complete in ${((Date.now() - startTime)/1000).toFixed(1)}s.`);
-    
-    // --- Step 2: Professional Claude Handoff (Optional / Elite) ---
-    const { generateClaudeNotes } = await import("../services/aiService.js");
-    let finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
-    
-    // Fallback to Gemini notes if Claude is unavailable or fails
-    if (!finalNotes) {
-      console.log("[PROCESS] Using Gemini-generated notes (Claude fallback).");
-      finalNotes = geminiNotes;
-    } else {
-      console.log("[PROCESS] Successfully utilized Claude 3.5 Sonnet for Elite notes.");
+    if (!transcript) {
+      console.log("[PROCESS] Whisper failed or no key. Falling back to Gemini for transcript...");
+      const geminiResult = await generateStudyMaterials(audioPath, contentType, providedTopic);
+      transcript = geminiResult.transcript;
+      geminiNotesFallback = geminiResult.notes; // Save this just in case Claude fails too
+      geminiFileName = geminiResult.geminiFileName;
     }
 
-    // Clean up Gemini file early once AI is done with it
-    if (geminiFileName) await (await import("../services/aiService.js")).deleteGeminiFile(geminiFileName);
+    // --- STEP 2: PROFESSIONAL NOTES (Priority: Claude 3.5 -> Gemini) ---
+    console.log("[PROCESS] Generating Professional Notes (Claude)...");
+    let finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
+
+    if (!finalNotes) {
+      console.log("[PROCESS] Claude failed or no key. Using Gemini fallback for notes...");
+      if (geminiNotesFallback) {
+        finalNotes = geminiNotesFallback;
+      } else {
+        const geminiResult = await generateStudyMaterials(audioPath, contentType, providedTopic);
+        finalNotes = geminiResult.notes;
+        geminiFileName = geminiResult.geminiFileName;
+      }
+    }
+
+    // --- STEP 3: ASYNC RECORDING UPLOAD (Parallel) ---
+    console.log("[PROCESS] Uploading recording to Firebase in background...");
+    const videoUrlPromise = uploadRecordingForUser({ userId, recordingPath: audioPath });
+
+    console.log(`[PROCESS] Core AI operations complete in ${((Date.now() - startTime)/1000).toFixed(1)}s.`);
+    
+    // We'll wait for the video URL at the end before returning response
+    const videoUrl = await videoUrlPromise;
+
+    // Clean up Gemini file if it was used
+    if (geminiFileName) await deleteGeminiFile(geminiFileName);
 
     console.log("[PROCESS] Extracting Visuals (Parallel)...");
     const diagramTasks = [];
