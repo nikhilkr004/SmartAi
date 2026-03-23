@@ -57,20 +57,23 @@ function renderSmartContent(doc, text) {
     if (!line) continue;
 
     if (line.startsWith("# ")) {
-      // Main Heading
-      doc.moveDown(1.5);
-      if (doc.y > 650) doc.addPage();
+      // Main Heading - Magazine Style
+      doc.moveDown(2);
+      if (doc.y > 600) doc.addPage();
       const heading = line.replace("# ", "").toUpperCase();
-      doc.fillColor("#102027").font("HeadingFont").fontSize(18).text(heading);
-      doc.rect(doc.x, doc.y, 40, 3).fill("#102027");
-      doc.moveDown(1);
+      
+      const startY = doc.y;
+      doc.rect(54, startY - 10, 3, 30).fill("#1B263B"); // Accent bar
+      doc.fillColor("#0D1B2A").font("HeadingFont").fontSize(20).text(heading, 65, startY);
+      doc.moveDown(1.2);
     } else if (line.startsWith("## ")) {
-      // Sub Heading
-      doc.moveDown(1);
+      // Sub Heading - Clean & Modern
+      doc.moveDown(1.2);
       if (doc.y > 700) doc.addPage();
       const subHeading = line.replace("## ", "");
-      doc.fillColor("#37474F").font("HeadingFont").fontSize(14).text(subHeading);
-      doc.moveDown(0.5);
+      doc.fillColor("#415A77").font("HeadingFont").fontSize(15).text(subHeading.toUpperCase());
+      doc.rect(doc.x, doc.y + 2, 30, 1.5).fill("#778DA9");
+      doc.moveDown(0.8);
     } else if (line.startsWith("[TIP:") || line.startsWith("[DEF:") || line.startsWith("[HINT:") || line.startsWith("[EX:")) {
       const type = line.substring(1, line.indexOf(":"));
       const content = line.substring(line.indexOf(":") + 1, line.length - 1).trim();
@@ -111,7 +114,7 @@ function addFooter(doc) {
   }
 }
 
-export async function createNotesPdf({ notes, transcript, diagramBuffers, chartBuffers = [], visualImagePaths = [], topic = "Class Session", isPro = false }) {
+export async function createNotesPdf({ notes, transcript, diagramBuffers, chartBuffers = [], visualImagePaths = [], topic = "Class Session", isPro = false, userName = "Student" }) {
   try {
     const tmpDir = getTmpDir();
     await ensureDir(tmpDir);
@@ -136,27 +139,58 @@ export async function createNotesPdf({ notes, transcript, diagramBuffers, chartB
       doc.registerFont("BodyFontBold", boldFontPath);
       doc.registerFont("BodyFont", regularFontPath);
 
-      // --- Custom Background ---
-      doc.on('pageAdded', () => {
-        doc.rect(0, 0, doc.page.width, doc.page.height).fill("#FAF9F6"); // Ghost White Paper feel
-      });
-      // Fill first page bg (since on('pageAdded') won't fire for page 1)
-      doc.rect(0, 0, doc.page.width, doc.page.height).fill("#FAF9F6");
+      // --- Custom Background & Global Header ---
+      const drawPageBackground = () => {
+        doc.rect(0, 0, doc.page.width, doc.page.height).fill("#FAF9F6");
+        
+        // Subtle Dot Grid
+        doc.fillColor("#E0E0E0");
+        for (let x = 40; x < doc.page.width; x += 20) {
+          for (let y = 40; y < doc.page.height; y += 20) {
+            doc.circle(x, y, 0.5).fill();
+          }
+        }
+
+        // Global Page Header (Except first page)
+        if (doc.page.number > 1) {
+          doc.fillColor("#90A4AE").font("HeadingFont").fontSize(7).text("STUDYAI ACADEMIC SERIES", 400, 30, { align: "right" });
+        }
+      };
+
+      doc.on('pageAdded', drawPageBackground);
+      drawPageBackground();
 
       // --- PAGE 1: PREMIUM HERO ---
-      doc.rect(0, 0, doc.page.width, 180).fill("#102027"); 
-      if (isPro) {
-        doc.fillColor("#FFD700").font("HeadingFont").fontSize(10).text("AERO PRO EXCLUSIVE", 60, 30);
-      }
-      doc.fillColor("#ffffff").font("HeadingFont").fontSize(32).text("STUDY NOTES", 60, 50);
-      doc.fontSize(14).font("BodyFont").text("MASTERCLASS SERIES", 60, 85);
+      // Modern Dark Header
+      doc.rect(0, 0, doc.page.width, 220).fill("#0D1B2A"); 
       
-      // Topic Badge
-      doc.roundedRect(60, 115, 300, 40, 4).fill("#263238");
-      doc.fillColor("#ECEFF1").font("HeadingFont").fontSize(9).text("TOPIC / SESSION", 72, 122);
-      doc.fillColor("#ffffff").fontSize(12).text(topic.toUpperCase(), 72, 134, { width: 280, ellipsis: true });
+      // Pro Badge
+      if (isPro) {
+        doc.fillColor("#E0E1DD").font("HeadingFont").fontSize(9).text("AERO PRO EDITION", 60, 45);
+        doc.rect(60, 58, 100, 1.5).fill("#E0E1DD");
+      }
+      
+      doc.fillColor("#ffffff").font("HeadingFont").fontSize(38).text("STUDY NOTES", 60, 75);
+      doc.fontSize(16).font("BodyFont").fillColor("#778DA9").text("MASTERCLASS SERIES", 60, 115);
+      
+      // Topic Badge (Glassmorphism look)
+      doc.roundedRect(60, 145, 300, 45, 6).fill("#1B263B");
+      doc.fillColor("#778DA9").font("HeadingFont").fontSize(9).text("TOPIC PERSPECTIVE", 75, 155);
+      doc.fillColor("#ffffff").fontSize(13).text(topic.toUpperCase(), 75, 168, { width: 270, ellipsis: true });
 
-      doc.y = 220;
+      // Side Detail (Right)
+      doc.fillColor("#415A77").font("BodyFont").fontSize(8).text("AUTHOR / STUDENT", 450, 45, { align: "right" });
+      doc.fillColor("#ffffff").font("HeadingFont").fontSize(11).text(userName, 450, 58, { align: "right" });
+      
+      const dateStr = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      doc.fillColor("#415A77").font("BodyFont").fontSize(8).text("GENERATED ON", 450, 85, { align: "right" });
+      doc.fillColor("#ffffff").font("HeadingFont").fontSize(11).text(dateStr, 450, 98, { align: "right" });
+
+      // Student Copy Badge
+      doc.rect(480, 145, 100, 20).fill("#1B263B");
+      doc.fillColor("#778DA9").font("HeadingFont").fontSize(7).text("OFFICIAL STUDENT COPY", 485, 152, { align: "right", width: 90 });
+
+      doc.y = 260;
       
       // --- CONTENT ---
       renderSmartContent(doc, notes || "");

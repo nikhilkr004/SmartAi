@@ -111,7 +111,8 @@ export async function processAudio(req, res, next) {
       chartBuffers, 
       visualImagePaths,
       topic: providedTopic || lectureTopic,
-      isPro: planType === "pro"
+      isPro: planType === "pro",
+      userName: userData?.name || "Student"
     });
     console.log(`[PROCESS] PDF Created! Size: ${fs.statSync(pdfPath).size} bytes`);
 
