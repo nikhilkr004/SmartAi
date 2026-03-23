@@ -49,6 +49,8 @@ class DashboardActivity : AppCompatActivity() {
     }
     private val db = com.google.firebase.firestore.FirebaseFirestore.getInstance()
 
+    private var processingDialog: androidx.appcompat.app.AlertDialog? = null
+
     private val recordingStoppedReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
@@ -67,6 +69,10 @@ class DashboardActivity : AppCompatActivity() {
                     }
                     binding.btnStart.isEnabled = true
                     binding.btnStop.isEnabled = false
+                    
+                    // Show Processing Dialog
+                    showProcessingDialog()
+                    
                     Log.d(Constants.TAG, "RECEIVER: Starting upload for ${f.name} (Type: $selectedContentType, Topic: $selectedTopic)")
                     vm.uploadRecording(f, selectedContentType, selectedTopic)
                 }
@@ -75,6 +81,7 @@ class DashboardActivity : AppCompatActivity() {
                     Toast.makeText(this@DashboardActivity, msg, Toast.LENGTH_LONG).show()
                     binding.btnStart.isEnabled = true
                     binding.btnStop.isEnabled = false
+                    dismissProcessingDialog()
                 }
             }
         }
@@ -122,6 +129,8 @@ class DashboardActivity : AppCompatActivity() {
             finish()
             return
         }
+
+        com.studyai.smartclassroom.utils.NotificationHelper.createNotificationChannel(this)
 
         binding.recyclerHistory.layoutManager = LinearLayoutManager(this)
         binding.recyclerHistory.adapter = adapter
@@ -171,14 +180,27 @@ class DashboardActivity : AppCompatActivity() {
             vm.state.collectLatest { state ->
                 when (state) {
                     is MainViewModel.UiState.Idle -> showLoading(false)
-                    is MainViewModel.UiState.Loading -> showLoading(true)
+                    is MainViewModel.UiState.Loading -> { /* Handled by processingDialog */ }
                     is MainViewModel.UiState.Error -> {
                         showLoading(false)
+                        dismissProcessingDialog()
                         Toast.makeText(this@DashboardActivity, state.message, Toast.LENGTH_LONG).show()
                     }
                     is MainViewModel.UiState.UploadSuccess -> {
+                        dismissProcessingDialog()
                         showLoading(false)
+                        
                         val resp = state.response
+                        // Trigger Notification
+                        com.studyai.smartclassroom.utils.NotificationHelper.showPdfReadyNotification(
+                            context = this@DashboardActivity,
+                            title = selectedTopic.ifEmpty { "New Study Session" },
+                            transcript = resp.transcript,
+                            notes = resp.notes,
+                            pdfUrl = resp.pdfUrl,
+                            recordingId = state.recordingId
+                        )
+
                         val i = Intent(this@DashboardActivity, ResultActivity::class.java).apply {
                             putExtra(Constants.EXTRA_TRANSCRIPT, resp.transcript)
                             putExtra(Constants.EXTRA_NOTES, resp.notes)
@@ -189,6 +211,7 @@ class DashboardActivity : AppCompatActivity() {
                         }
                         startActivity(i)
                         vm.loadHistory()
+                        loadIntelligenceStats() // Refresh storage
                     }
                     is MainViewModel.UiState.HistoryLoaded -> {
                         showLoading(false)
@@ -461,6 +484,9 @@ class DashboardActivity : AppCompatActivity() {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
                 perms.add(Manifest.permission.BLUETOOTH_CONNECT)
             }
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                perms.add(Manifest.permission.POST_NOTIFICATIONS)
+            }
             requestAudioPermission.launch(perms.toTypedArray())
         }
 
@@ -470,6 +496,29 @@ class DashboardActivity : AppCompatActivity() {
     private fun startMediaProjectionRequest() {
         val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as MediaProjectionManager
         mediaProjectionLauncher.launch(mpm.createScreenCaptureIntent())
+    }
+
+    private fun showProcessingDialog() {
+        if (isFinishing || isDestroyed) return
+        if (processingDialog?.isShowing == true) return
+
+        val dialogView = layoutInflater.inflate(R.layout.layout_processing_dialog, null)
+        processingDialog = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+
+        processingDialog?.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        processingDialog?.show()
+    }
+
+    private fun dismissProcessingDialog() {
+        try {
+            if (processingDialog?.isShowing == true) {
+                processingDialog?.dismiss()
+            }
+        } catch (e: Exception) { }
+        processingDialog = null
     }
 
     private fun showLoading(show: Boolean) {
