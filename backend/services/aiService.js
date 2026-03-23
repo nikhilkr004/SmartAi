@@ -72,54 +72,68 @@ export async function generateStudyMaterials(videoPath, contentType = "General",
     if (fileState.state === "FAILED") throw new Error("Gemini failed to process file.");
 
     const client = getClient();
-    // Use prompt-based JSON instead of strict schema for better compatibility
-    const model = client.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json"
+    
+    // DIAGNOSTIC: List available models if 404 occurs
+    const listModelsSilent = async () => {
+      try {
+        const result = await client.listModels();
+        console.log("[GEMINI DIAGNOSTIC] Available models:", result.models.map(m => m.name).join(", "));
+      } catch (e) {
+        console.warn("[GEMINI DIAGNOSTIC] Failed to list models:", e.message);
       }
-    });
+    };
 
     console.log(`[GEMINI] Generating Transcript & Notes (Consolidated Turn)...`);
     const prompt = `
-      You are a World-Class Academic Tutor. 
-      Analyze the attached audio comprehensively.
+      Analyze the attached audio professionally.
       
-      RETURN A JSON OBJECT WITH THESE EXACT KEYS:
+      RETURN ONLY A JSON OBJECT:
       {
         "transcript": "Full accurate transcription text...",
-        "notes": "Masterclass study notes in Markdown..."
+        "notes": "Premium study notes in Markdown..."
       }
 
-      TASK 1: Provide a highly accurate transcription in the "transcript" field.
-      TASK 2: Create "Masterclass" quality study notes in the "notes" field.
-      
-      CONTEXT: ${contentType}${topic ? ` | TOPIC: ${topic}` : ""}.
-      
-      NOTES STRUCTURE (Markdown):
-      1. # EXECUTIVE SUMMARY
-      2. # DEEP DIVE (with ## headings and [TIP], [DEF], [HINT], [EX])
-      3. # DIAGRAM FLOWS (Include TWO \`\`\`mermaid blocks)
-      4. # DATA VISUALIZATION (Include ONE \`\`\`chartjs block)
-      5. # MASTERCLASS CHEAT SHEET
-
-      CRITICAL: Ensure the response is VALID JSON. Escape newlines in the strings.
+      CRITICAL: Ensure the response is VALID JSON.
     `;
 
-    const result = await model.generateContent([
-      {
-        fileData: {
-          mimeType: uploadResult.file.mimeType,
-          fileUri: uploadResult.file.uri
+    // Strategy: Try multiple model IDs in sequence
+    const modelIds = ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro"];
+    let result = null;
+    let lastError = null;
+
+    for (const modelId of modelIds) {
+      try {
+        console.log(`[GEMINI] Attempting with model: ${modelId}...`);
+        const model = client.getGenerativeModel({ model: modelId });
+        result = await model.generateContent([
+          {
+            fileData: {
+              mimeType: uploadResult.file.mimeType,
+              fileUri: uploadResult.file.uri
+            }
+          },
+          { text: prompt }
+        ]);
+        if (result) break;
+      } catch (err) {
+        lastError = err;
+        console.warn(`[GEMINI] Model ${modelId} failed: ${err.message}`);
+        if (err.message.includes("404")) {
+           await listModelsSilent();
         }
-      },
-      { text: prompt }
-    ]);
+      }
+    }
+
+    if (!result) throw lastError;
 
     const duration = (Date.now() - startTime) / 1000;
     console.log(`[GEMINI] Consolidated processing complete in ${duration}s`);
     
-    const responseJson = JSON.parse(result.response.text());
+    // Clean up markdown block if Gemini wraps JSON in backticks
+    let rawText = result.response.text();
+    rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
+    
+    const responseJson = JSON.parse(rawText);
     
     return { 
       transcript: responseJson.transcript, 
