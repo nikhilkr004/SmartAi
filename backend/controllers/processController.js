@@ -50,24 +50,36 @@ export async function processAudio(req, res, next) {
 
     const { 
       transcript, 
-      notes,
+      notes: geminiNotes, // Use this as fallback
       videoFileData, 
       geminiFileName 
     } = aiResult;
 
     console.log(`[PROCESS] Core operations complete in ${((Date.now() - startTime)/1000).toFixed(1)}s.`);
     
+    // --- Step 2: Professional Claude Handoff (Optional / Elite) ---
+    const { generateClaudeNotes } = await import("../services/aiService.js");
+    let finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
+    
+    // Fallback to Gemini notes if Claude is unavailable or fails
+    if (!finalNotes) {
+      console.log("[PROCESS] Using Gemini-generated notes (Claude fallback).");
+      finalNotes = geminiNotes;
+    } else {
+      console.log("[PROCESS] Successfully utilized Claude 3.5 Sonnet for Elite notes.");
+    }
+
     // Clean up Gemini file early once AI is done with it
-    if (geminiFileName) await deleteGeminiFile(geminiFileName);
+    if (geminiFileName) await (await import("../services/aiService.js")).deleteGeminiFile(geminiFileName);
 
     console.log("[PROCESS] Extracting Visuals (Parallel)...");
     const diagramTasks = [];
     const chartTasks = [];
 
-    // 1. Prepare Mermaid tasks
+    // 1. Prepare Mermaid tasks (Using finalNotes which could be from Claude or Gemini)
     const mermaidRegex = /```mermaid\s*([\s\S]*?)```/g;
     let match;
-    while ((match = mermaidRegex.exec(notes)) !== null) {
+    while ((match = mermaidRegex.exec(finalNotes)) !== null) {
       const code = match[1].trim();
       if (code) diagramTasks.push(generateMermaidImage(code));
     }
@@ -75,7 +87,7 @@ export async function processAudio(req, res, next) {
     // 2. Prepare Chart.js tasks
     const { generateChartImage } = await import("../utils/chartHelper.js");
     const chartRegex = /```chartjs\s*([\s\S]*?)```/g;
-    while ((match = chartRegex.exec(notes)) !== null) {
+    while ((match = chartRegex.exec(finalNotes)) !== null) {
       try {
         const configStr = match[1].trim();
         let config;
@@ -101,11 +113,11 @@ export async function processAudio(req, res, next) {
 
     console.log("[PROCESS] Creating Modern PDF...");
     // Extraction: Find the first line or heading to use as the PDF topic cover
-    const topicMatch = notes.match(/# (.*)/) || notes.match(/\*\*(.*)\*\*/);
+    const topicMatch = finalNotes.match(/# (.*)/) || finalNotes.match(/\*\*(.*)\*\*/);
     const lectureTopic = topicMatch ? topicMatch[1] : "Class Session";
 
     pdfPath = await createNotesPdf({ 
-      notes, 
+      notes: finalNotes, 
       transcript, 
       diagramBuffers, 
       chartBuffers, 
