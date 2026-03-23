@@ -74,7 +74,7 @@ export async function generateStudyMaterials(videoPath, contentType = "General",
     const client = getClient();
     // Using JSON Schema for single-turn extraction
     const model = client.getGenerativeModel({ 
-      model: "gemini-2.0-flash",
+      model: "gemini-1.5-flash",
       generationConfig: {
         responseMimeType: "application/json",
         responseSchema: {
