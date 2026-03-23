@@ -4,7 +4,7 @@
     <selectionStates>
       <SelectionState runConfigName="SmartClassroomAssistant.app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-03-19T20:12:08.125122700Z">
+        <DropdownSelection timestamp="2026-03-23T16:15:06.495490100Z">
           <Target type="DEFAULT_BOOT">
             <handle>
               <DeviceId pluginId="PhysicalDevice" identifier="serial=ZD222GRQZF" />

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 /**
- * Fetches a rendered Mermaid diagram image from QuickChart (Highly Stable).
+ * Fetches a rendered Mermaid diagram image from QuickChart or Kroki.
  * @param {string} mermaidCode - The raw Mermaid syntax string.
  * @returns {Promise<Buffer|null>} - The binary image buffer, or null if it fails.
  */
@@ -12,43 +12,69 @@ export async function generateMermaidImage(mermaidCode) {
     .replace(/```/g, "")
     .trim();
 
-  // NUCLEAR SANITIZER: Fix labels that break Mermaid
-  cleanCode = cleanCode
+  // NUCLEAR SANITIZER: Split by connectors, clean nodes precisely, re-join.
+  const processedCode = cleanCode
     .split('\n')
     .map(line => {
-      let l = line;
-      // 1. Fix Arrows: '->' to '-->'
-      if (l.includes('->') && !l.includes('-->')) {
-        l = l.replace(/->/g, '-->');
+      let l = line.trim();
+      if (!l || l.toLowerCase().startsWith('graph') || l.toLowerCase().startsWith('flowchart')) {
+        return l;
       }
-      
-      // 2. Wrap [label] in ["label"] and strip internal quotes/special chars
-      // This fixes A[Message: "Hello"] -> A["Message: Hello"]
-      l = l.replace(/\[(.*?)\]/g, (match, p1) => {
-        if (p1.includes('"')) {
-           const safe = p1.replace(/["]/g, '').trim();
-           return `["${safe}"]`;
+
+      // Split line into nodes and connectors
+      const parts = l.split(/(\s*--?>\s*|\s*---?\s*|\s*==?>\s*|\s*-\.\s*)/);
+      const cleanedParts = parts.map(p => {
+        if (!p) return p;
+        
+        // If it looks like a connector, standardize and return
+        if (p.trim().match(/^(--?>|---?|==?>|-\.)$/)) {
+          let c = p.trim();
+          if (c === '->') return ' --> ';
+          if (c === '-->') return ' --> ';
+          if (c === '==>') return ' ==> ';
+          return ` ${c} `;
         }
-        return `["${p1.trim()}"]`;
-      });
+        
+        // If it's a node, find the outermost brackets and clean the label
+        const shapes = [
+          { open: '[', close: ']' },
+          { open: '{', close: '}' },
+          { open: '(', close: ')' },
+          { open: '>', close: ']' }
+        ];
 
-      // 3. Wrap {label} in {"label"}
-      l = l.replace(/\{(.*?)\}/g, (match, p1) => {
-        const safe = p1.replace(/["]/g, '').trim();
-        return `{"${safe}"}`;
-      });
+        let bestShape = null;
+        let minStart = Infinity;
 
-      // 4. Wrap (label) in ("label")
-      l = l.replace(/\((.*?)\)/g, (match, p1) => {
-        if (p1.includes('graph ') || p1.includes('flowchart ')) return match; // Skip header
-        const safe = p1.replace(/["]/g, '').trim();
-        return `("${safe}")`;
-      });
+        for (const s of shapes) {
+          const start = p.indexOf(s.open);
+          const end = p.lastIndexOf(s.close);
+          if (start !== -1 && end !== -1 && end > start) {
+            if (start < minStart) {
+              minStart = start;
+              bestShape = { ...s, start, end };
+            }
+          }
+        }
 
-      return l;
+        if (bestShape) {
+          const { open, close, start, end } = bestShape;
+          const id = p.substring(0, start).trim();
+          const content = p.substring(start + 1, end).trim();
+          // Strip quotes and internal brackets that break Mermaid
+          const safeContent = content.replace(/["'\[\]\(\)\{\}]/g, '').trim();
+          return `${id}${open}"${safeContent}"${close}`;
+        }
+        
+        return p; // Return as-is if no shape found
+      });
+      
+      return cleanedParts.join('');
     })
-    .filter(line => !line.trim().startsWith('%%'))
+    .filter(line => !!line)
     .join('\n');
+
+  cleanCode = processedCode;
 
   if (!cleanCode) return null;
 

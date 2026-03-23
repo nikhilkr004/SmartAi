@@ -134,10 +134,12 @@ export async function generateStructuredNotes(transcript, videoFileData = null, 
               "   - [EX: Real-world scenario to apply the concept]" },
       { text: "4. # DIAGRAM FLOWS: You MUST include at least TWO (2) distinct diagrams in Mermaid notation. Use ```mermaid blocks. \n" +
               "   - ONLY use 'graph TD' flowcharts. \n" +
-              "   - Use simple arrows '-->' and clear labels like: A[Concept] --> B[Result]" },
+              "   - Use simple arrows '-->' and clear labels like: A[Concept] --> B[Result]. \n" +
+              "   - CRITICAL: Do NOT use quotes INSIDE labels. Avoid A[\"Time: O(\"N\")\"] - instead use A[\"Time: O(N)\"]." },
       { text: "5. # DATA VISUALIZATION: If the transcript contains any numbers, comparisons, or progress data, you MUST include a Chart.js configuration block. Use ```chartjs blocks. \n" +
-              "   - Provide ONLY the JSON object for the Chart.js 'config'. \n" +
-              "   - Example: { type: 'bar', data: { labels: ['Q1', 'Q2'], datasets: [{ label: 'Sales', data: [10, 20] }] }, options: { plugins: { title: { display: true, text: 'Custom Title' } } } } \n" +
+              "   - Provide a VALID JSON object for the Chart.js 'config'. \n" +
+              "   - CRITICAL: Use DOUBLE QUOTES (\") for all keys and string values. Do NOT use single quotes (') for the JSON structure. \n" +
+              "   - Example: { \"type\": \"bar\", \"data\": { \"labels\": [\"A\", \"B\"], \"datasets\": [{ \"label\": \"Sales\", \"data\": [10, 20] }] } } \n" +
               "   - Keep it simple but professional." },
       { text: "6. # MASTERCLASS CHEAT SHEET: A final 'Too Long; Didn't Read' summary or a glossary of formulas/key terms at the end." },
       { text: "CRITICAL RULES:" },

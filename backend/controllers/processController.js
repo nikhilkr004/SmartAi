@@ -80,9 +80,13 @@ export async function processAudio(req, res, next) {
     while ((match = chartRegex.exec(notes)) !== null) {
       try {
         const configStr = match[1].trim();
-        // Use a safe parser or replace single quotes with double quotes for valid JSON
-        const sanitizedJson = configStr.replace(/'/g, '"');
-        const config = JSON.parse(sanitizedJson);
+        let config;
+        try {
+          config = JSON.parse(configStr);
+        } catch (parseError) {
+          console.warn("[PROCESS] Failed to parse Chart.js block (Likely invalid JSON):", parseError.message);
+        }
+        
         const buffer = await generateChartImage(config);
         if (buffer) chartBuffers.push(buffer);
       } catch (e) {
