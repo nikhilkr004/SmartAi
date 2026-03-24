@@ -138,7 +138,7 @@ export async function processAudio(req, res, next) {
     console.log("[PROCESS] Processing complete.");
     return res.json({
       transcript,
-      notes,
+      notes: finalNotes,
       pdf_url: pdfUrl,
       video_url: videoUrl
     });
