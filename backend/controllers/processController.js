@@ -36,7 +36,7 @@ export async function processAudio(req, res, next) {
       return res.status(400).json({ error: { message: "`file` is required in multipart form-data" } });
     }
 
-    const audioPath = file.path; 
+    audioPath = file.path; 
     console.log(`[PROCESS] File received: ${file.originalname} -> ${audioPath} (${file.size} bytes)`);
 
     const startTime = Date.now();
