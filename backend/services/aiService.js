@@ -91,104 +91,48 @@ export async function generateClaudeNotes(transcript, contentType = "General", t
   }
 }
 
-function requireGeminiKey() {
-  if (!process.env.GEMINI_API_KEY) {
-    throw Object.assign(new Error("GEMINI_API_KEY is not set"), { statusCode: 500 });
-  }
-}
+// --- OpenAI Configuration (Notes) ---
+export async function generateGPTNotes(transcript, contentType = "General", topic = null) {
+  const openai = getOpenAIClient();
+  if (!openai) return null;
 
-function getClient() {
-  requireGeminiKey();
-  const key = process.env.GEMINI_API_KEY;
-  console.log(`[AI SERVICE] Initializing Gemini client...`);
-  return new GoogleGenerativeAI(key);
-}
+  console.log(`[GPT] Generating Professional Notes for Topic: ${topic || 'Unspecified'}...`);
+  const startTime = Date.now();
 
-export function getFileManager() {
-  requireGeminiKey();
-  const key = process.env.GEMINI_API_KEY;
-  return new GoogleAIFileManager(key);
-}
-
-/**
- * Deletes a file from Gemini servers.
- */
-export async function deleteGeminiFile(fileName) {
   try {
-    const fileManager = getFileManager();
-    await fileManager.deleteFile(fileName);
-    console.log(`[GEMINI] Deleted temporary file from Gemini server: ${fileName}`);
-  } catch (e) {
-    console.warn(`[GEMINI] Failed to delete remote file: ${e.message}`);
-  }
-}
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: "You are a world-class academic scribe. Convert transcripts into 'Masterclass' study guides. Focus on structure, logic, and visual representation (Mermaid/Charts)."
+        },
+        {
+          role: "user",
+          content: `
+            TRANSCRIPT:
+            ${transcript}
 
-export async function generateStudyMaterials(videoPath, contentType = "General", topic = null) {
-  let tempAudioPath = null;
-  
-  try {
-    const stats = fs.statSync(videoPath);
-    console.log(`[GEMINI] Processing Video: ${videoPath} (${stats.size} bytes)`);
+            TASK: Create a professional study guide based on this lecture.
+            CONTEXT: ${contentType}${topic ? ` | TOPIC: ${topic}` : ""}.
 
-    // Extract audio (69MB -> ~3MB)
-    tempAudioPath = await extractAudio(videoPath);
-    const audioStats = fs.statSync(tempAudioPath);
-    
-    console.log(`[GEMINI] Preparing Inline Audio: ${audioStats.size} bytes...`);
-    const startTime = Date.now();
-    
-    // Convert to base64 for inline transmission
-    const audioBase64 = fs.readFileSync(tempAudioPath).toString("base64");
-    
-    // Clean up local temp audio immediately
-    await safeUnlink(tempAudioPath);
-    tempAudioPath = null;
-
-    const client = getClient();
-    const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
-
-    console.log(`[GEMINI] Generating Transcript & Notes (Consolidated Inline Turn)...`);
-    const prompt = `
-      Analyze the attached audio professionally.
-      
-      RETURN ONLY A JSON OBJECT:
-      {
-        "transcript": "Full accurate transcription text...",
-        "notes": "Premium study notes in Markdown..."
-      }
-
-      CRITICAL: Ensure the response is VALID JSON.
-    `;
-
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          data: audioBase64,
-          mimeType: "audio/mp3"
+            STRUCTURE MUST BE:
+            1. # EXECUTIVE SUMMARY: 3 punchy points.
+            2. # CONCEPTUAL DEEP DIVE: Use ## for concepts. Include [TIP], [DEF], [HINT], [EX].
+            3. # VISUAL FLOWS: Provide TWO (2) \`\`\`mermaid blocks.
+            4. # DATA INSIGHTS: Provide ONE (1) \`\`\`chartjs block.
+            5. # MASTERCLASS CHEAT SHEET: Final glossary.
+          `
         }
-      },
-      { text: prompt }
-    ]);
+      ]
+    });
 
     const duration = (Date.now() - startTime) / 1000;
-    console.log(`[GEMINI] Consolidated inline processing complete in ${duration}s`);
-    
-    // Clean up markdown block if Gemini wraps JSON in backticks
-    let rawText = result.response.text();
-    rawText = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
-    
-    const responseJson = JSON.parse(rawText);
-    
-    return { 
-      transcript: responseJson.transcript, 
-      notes: responseJson.notes,
-      geminiFileName: null // No remote file to clean up in inline mode
-    };
+    console.log(`[GPT] Notes generated in ${duration}s`);
+    return response.choices[0].message.content;
   } catch (err) {
-    console.error("[GEMINI ERROR]", err);
-    throw Object.assign(new Error(`Gemini processing error: ${err.message}`), { statusCode: 502 });
-  } finally {
-    if (tempAudioPath) await safeUnlink(tempAudioPath);
+    console.error("[GPT ERROR]", err);
+    return null;
   }
 }
 

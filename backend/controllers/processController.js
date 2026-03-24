@@ -1,4 +1,4 @@
-import { generateStudyMaterials, deleteGeminiFile, transcribeWithWhisper, generateClaudeNotes } from "../services/aiService.js";
+import { transcribeWithWhisper, generateClaudeNotes, generateGPTNotes } from "../services/aiService.js";
 import { createNotesPdf } from "../services/pdfService.js";
 import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseService.js";
 import { safeUnlink } from "../utils/fileHelper.js";
@@ -36,34 +36,33 @@ export async function processAudio(req, res, next) {
       return res.status(400).json({ error: { message: "`file` is required in multipart form-data" } });
     }
 
-    audioPath = file.path;
+    const audioPath = file.path; 
     console.log(`[PROCESS] File received: ${file.originalname} -> ${audioPath} (${file.size} bytes)`);
 
     const startTime = Date.now();
 
-    // --- STEP 1: PRIMARY AI (Gemini 1.5 Flash - Now using Stable Inline Mode) ---
-    console.log("[PROCESS] Attempting Primary AI Generation (Gemini Inline)...");
-    let transcript = null;
-    let finalNotes = null;
-    
-    try {
-      const geminiResult = await generateStudyMaterials(audioPath, contentType, providedTopic);
-      transcript = geminiResult.transcript;
-      finalNotes = geminiResult.notes;
-      console.log("[PROCESS] Gemini Inline successful.");
-    } catch (geminiError) {
-      console.warn("[PROCESS] Gemini failed. Trying OpenAI/Claude fallback...", geminiError.message);
-      
-      // Fallback to Whisper for Transcript
-      transcript = await transcribeWithWhisper(audioPath);
-      if (!transcript) throw new Error("All transcription services failed.");
-      
-      // Fallback to Claude for Notes
-      finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
-      if (!finalNotes) throw new Error("All note generation services failed.");
+    // --- STEP 1: TRANSCRIPTION (Priority: OpenAI Whisper) ---
+    console.log("[PROCESS] Attempting Transcription (OpenAI Whisper)...");
+    let transcript = await transcribeWithWhisper(audioPath);
+
+    if (!transcript) {
+      throw new Error("OpenAI API Key not found or invalid. Please add 'OPENAI_API_KEY' to your Environment Variables in the Render Dashboard.");
     }
 
-    // --- STEP 2: ASYNC RECORDING UPLOAD (Parallel) ---
+    // --- STEP 2: PROFESSIONAL NOTES (Priority: Claude 3.5 -> GPT-4o) ---
+    console.log("[PROCESS] Generating Professional Notes...");
+    let finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
+
+    if (!finalNotes) {
+      console.log("[PROCESS] Claude unavailable. Using GPT-4o fallback...");
+      finalNotes = await generateGPTNotes(transcript, contentType, providedTopic);
+    }
+
+    if (!finalNotes) {
+      throw new Error("Note generation failed. Ensure your AI API Keys (Anthropic/OpenAI) are set in the Render Dashboard.");
+    }
+
+    // --- STEP 3: ASYNC RECORDING UPLOAD (Parallel) ---
     console.log("[PROCESS] Uploading recording to Firebase in background...");
     const videoUrlPromise = uploadRecordingForUser({ userId, recordingPath: audioPath });
 
@@ -76,7 +75,7 @@ export async function processAudio(req, res, next) {
     const diagramTasks = [];
     const chartTasks = [];
 
-    // 1. Prepare Mermaid tasks (Using finalNotes which could be from Claude or Gemini)
+    // 1. Prepare Mermaid tasks
     const mermaidRegex = /```mermaid\s*([\s\S]*?)```/g;
     let match;
     while ((match = mermaidRegex.exec(finalNotes)) !== null) {
