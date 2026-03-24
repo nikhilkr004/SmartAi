@@ -41,36 +41,29 @@ export async function processAudio(req, res, next) {
 
     const startTime = Date.now();
 
-    // --- STEP 1: TRANSCRIPTION (Priority: OpenAI Whisper -> Gemini) ---
-    console.log("[PROCESS] Attempting Transcription (Whisper)...");
-    let transcript = await transcribeWithWhisper(audioPath);
-    let geminiNotesFallback = null;
-    let geminiFileName = null; // Track for cleanup
-
-    if (!transcript) {
-      console.log("[PROCESS] Whisper failed or no key. Falling back to Gemini for transcript...");
+    // --- STEP 1: PRIMARY AI (Gemini 1.5 Flash - Now using Stable Inline Mode) ---
+    console.log("[PROCESS] Attempting Primary AI Generation (Gemini Inline)...");
+    let transcript = null;
+    let finalNotes = null;
+    
+    try {
       const geminiResult = await generateStudyMaterials(audioPath, contentType, providedTopic);
       transcript = geminiResult.transcript;
-      geminiNotesFallback = geminiResult.notes; // Save this just in case Claude fails too
-      geminiFileName = geminiResult.geminiFileName;
+      finalNotes = geminiResult.notes;
+      console.log("[PROCESS] Gemini Inline successful.");
+    } catch (geminiError) {
+      console.warn("[PROCESS] Gemini failed. Trying OpenAI/Claude fallback...", geminiError.message);
+      
+      // Fallback to Whisper for Transcript
+      transcript = await transcribeWithWhisper(audioPath);
+      if (!transcript) throw new Error("All transcription services failed.");
+      
+      // Fallback to Claude for Notes
+      finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
+      if (!finalNotes) throw new Error("All note generation services failed.");
     }
 
-    // --- STEP 2: PROFESSIONAL NOTES (Priority: Claude 3.5 -> Gemini) ---
-    console.log("[PROCESS] Generating Professional Notes (Claude)...");
-    let finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
-
-    if (!finalNotes) {
-      console.log("[PROCESS] Claude failed or no key. Using Gemini fallback for notes...");
-      if (geminiNotesFallback) {
-        finalNotes = geminiNotesFallback;
-      } else {
-        const geminiResult = await generateStudyMaterials(audioPath, contentType, providedTopic);
-        finalNotes = geminiResult.notes;
-        geminiFileName = geminiResult.geminiFileName;
-      }
-    }
-
-    // --- STEP 3: ASYNC RECORDING UPLOAD (Parallel) ---
+    // --- STEP 2: ASYNC RECORDING UPLOAD (Parallel) ---
     console.log("[PROCESS] Uploading recording to Firebase in background...");
     const videoUrlPromise = uploadRecordingForUser({ userId, recordingPath: audioPath });
 
@@ -78,9 +71,6 @@ export async function processAudio(req, res, next) {
     
     // We'll wait for the video URL at the end before returning response
     const videoUrl = await videoUrlPromise;
-
-    // Clean up Gemini file if it was used
-    if (geminiFileName) await deleteGeminiFile(geminiFileName);
 
     console.log("[PROCESS] Extracting Visuals (Parallel)...");
     const diagramTasks = [];

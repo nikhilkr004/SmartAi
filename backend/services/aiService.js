@@ -124,9 +124,7 @@ export async function deleteGeminiFile(fileName) {
 }
 
 export async function generateStudyMaterials(videoPath, contentType = "General", topic = null) {
-  let uploadResult = null;
   let tempAudioPath = null;
-  const fileManager = getFileManager();
   
   try {
     const stats = fs.statSync(videoPath);
@@ -136,40 +134,20 @@ export async function generateStudyMaterials(videoPath, contentType = "General",
     tempAudioPath = await extractAudio(videoPath);
     const audioStats = fs.statSync(tempAudioPath);
     
-    console.log(`[GEMINI] Uploading Audio: ${audioStats.size} bytes...`);
+    console.log(`[GEMINI] Preparing Inline Audio: ${audioStats.size} bytes...`);
     const startTime = Date.now();
     
-    uploadResult = await fileManager.uploadFile(tempAudioPath, {
-      mimeType: "audio/mp3",
-      displayName: path.basename(tempAudioPath),
-    });
+    // Convert to base64 for inline transmission
+    const audioBase64 = fs.readFileSync(tempAudioPath).toString("base64");
     
-    // Clean up local temp audio early
+    // Clean up local temp audio immediately
     await safeUnlink(tempAudioPath);
     tempAudioPath = null;
 
-    // Wait for processing
-    let fileState = await fileManager.getFile(uploadResult.file.name);
-    while (fileState.state === "PROCESSING") {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      fileState = await fileManager.getFile(uploadResult.file.name);
-    }
-    
-    if (fileState.state === "FAILED") throw new Error("Gemini failed to process file.");
-
     const client = getClient();
-    
-    // DIAGNOSTIC: List available models if 404 occurs
-    const listModelsSilent = async () => {
-      try {
-        const result = await client.listModels();
-        console.log("[GEMINI DIAGNOSTIC] Available models:", result.models.map(m => m.name).join(", "));
-      } catch (e) {
-        console.warn("[GEMINI DIAGNOSTIC] Failed to list models:", e.message);
-      }
-    };
+    const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    console.log(`[GEMINI] Generating Transcript & Notes (Consolidated Turn)...`);
+    console.log(`[GEMINI] Generating Transcript & Notes (Consolidated Inline Turn)...`);
     const prompt = `
       Analyze the attached audio professionally.
       
@@ -182,38 +160,18 @@ export async function generateStudyMaterials(videoPath, contentType = "General",
       CRITICAL: Ensure the response is VALID JSON.
     `;
 
-    // Strategy: Try multiple model IDs in sequence
-    const modelIds = ["gemini-1.5-flash-latest", "gemini-1.5-flash", "gemini-1.5-pro"];
-    let result = null;
-    let lastError = null;
-
-    for (const modelId of modelIds) {
-      try {
-        console.log(`[GEMINI] Attempting with model: ${modelId}...`);
-        const model = client.getGenerativeModel({ model: modelId });
-        result = await model.generateContent([
-          {
-            fileData: {
-              mimeType: uploadResult.file.mimeType,
-              fileUri: uploadResult.file.uri
-            }
-          },
-          { text: prompt }
-        ]);
-        if (result) break;
-      } catch (err) {
-        lastError = err;
-        console.warn(`[GEMINI] Model ${modelId} failed: ${err.message}`);
-        if (err.message.includes("404")) {
-           await listModelsSilent();
+    const result = await model.generateContent([
+      {
+        inlineData: {
+          data: audioBase64,
+          mimeType: "audio/mp3"
         }
-      }
-    }
-
-    if (!result) throw lastError;
+      },
+      { text: prompt }
+    ]);
 
     const duration = (Date.now() - startTime) / 1000;
-    console.log(`[GEMINI] Consolidated processing complete in ${duration}s`);
+    console.log(`[GEMINI] Consolidated inline processing complete in ${duration}s`);
     
     // Clean up markdown block if Gemini wraps JSON in backticks
     let rawText = result.response.text();
@@ -224,11 +182,7 @@ export async function generateStudyMaterials(videoPath, contentType = "General",
     return { 
       transcript: responseJson.transcript, 
       notes: responseJson.notes,
-      videoFileData: {
-        mimeType: uploadResult.file.mimeType,
-        fileUri: uploadResult.file.uri
-      },
-      geminiFileName: uploadResult.file.name
+      geminiFileName: null // No remote file to clean up in inline mode
     };
   } catch (err) {
     console.error("[GEMINI ERROR]", err);
