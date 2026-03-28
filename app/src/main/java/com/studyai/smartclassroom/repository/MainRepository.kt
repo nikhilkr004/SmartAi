@@ -9,17 +9,13 @@ import com.google.firebase.storage.FirebaseStorage
 import com.studyai.smartclassroom.model.ResponseModel
 import com.studyai.smartclassroom.network.RetrofitClient
 import com.studyai.smartclassroom.utils.Constants
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.tasks.await
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.util.UUID
 
 /**
  * Repository hides data sources (network + Firestore) from ViewModel.
+ * Optimized for Direct-to-Storage upload to bypass 504 Gateway Timeouts.
  */
 class MainRepository(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
@@ -47,7 +43,6 @@ class MainRepository(
         photoUrl?.let { updates["profilePic"] = it }
         
         docRef.update(updates).await()
-        Log.d(Constants.TAG, "User profile updated for user: $uid")
     }
 
     suspend fun saveUserProfile(name: String?, email: String?, photoUrl: String?) {
@@ -56,7 +51,6 @@ class MainRepository(
         val snap = docRef.get().await()
 
         if (!snap.exists()) {
-            // New User Initialization
             val payload = hashMapOf(
                 "name" to (name ?: ""),
                 "email" to (email ?: ""),
@@ -70,66 +64,63 @@ class MainRepository(
                 "updatedAt" to FieldValue.serverTimestamp()
             )
             docRef.set(payload).await()
-            Log.d(Constants.TAG, "User profile initialized for new user: $uid")
         } else {
-            // Existing User - Update profile sync
-            val updates = mutableMapOf<String, Any>(
-                "updatedAt" to FieldValue.serverTimestamp()
-            )
+            val updates = mutableMapOf<String, Any>("updatedAt" to FieldValue.serverTimestamp())
             name?.let { updates["name"] = it }
             email?.let { updates["email"] = it }
             photoUrl?.let { updates["profilePic"] = it }
-            
             docRef.update(updates).await()
-            Log.d(Constants.TAG, "User profile synced for existing user: $uid")
         }
     }
 
+    /**
+     * UPLOAD STRATEGY: 
+     * 1. Upload file directly to Firebase Storage (No 30s limit).
+     * 2. Send storage path to backend as a small JSON request.
+     * 3. Poll Firestore for AI results.
+     */
     suspend fun uploadRecordingToBackend(file: File, contentType: String, topic: String): ResponseModel {
-        val user = auth.currentUser ?: run {
-            Log.e(Constants.TAG, "UPLOAD ERROR: User not logged in!")
-            throw IllegalStateException("User not logged in")
-        }
+        val user = auth.currentUser ?: throw IllegalStateException("User not logged in")
+        val uid = user.uid
+        val jobId = UUID.randomUUID().toString()
+        val storagePath = "recordings/$uid/$jobId-${file.name}"
         
-        Log.d(Constants.TAG, "Starting upload flow for: ${file.name} (${file.length()} bytes)")
-        Log.d(Constants.TAG, "Requesting Firebase ID Token...")
+        Log.d(Constants.TAG, "STEP 1/3: Uploading to Firebase Storage: $storagePath")
+        val storageRef = storage.reference.child(storagePath)
+        storageRef.putFile(Uri.fromFile(file)).await()
         
+        Log.d(Constants.TAG, "STEP 2/3: Notifying backend via /process")
         val tokenResult = user.getIdToken(true).await()
-        val token = tokenResult.token ?: run {
-            Log.e(Constants.TAG, "UPLOAD FAILED: ID Token was null!")
-            throw IllegalStateException("Failed to get ID token")
-        }
+        val token = tokenResult.token ?: throw IllegalStateException("Failed to get ID token")
         
-        Log.d(Constants.TAG, "Token acquired. Creating request...")
-        val fileBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
-        val filePart = MultipartBody.Part.createFormData("file", file.name, fileBody)
-
-        Log.d(Constants.TAG, "Calling backend /process endpoint with Type: $contentType, Topic: $topic")
-        val contentTypeBody = contentType.toRequestBody("text/plain".toMediaTypeOrNull())
-        val topicBody = topic.toRequestBody("text/plain".toMediaTypeOrNull())
-        val resp = RetrofitClient.api.processRecording("Bearer $token", filePart, contentTypeBody, topicBody)
+        val requestBody = mapOf(
+            "fileUrl" to storagePath,
+            "contentType" to contentType,
+            "topic" to topic
+        )
+        
+        val resp = RetrofitClient.api.processRecording("Bearer $token", requestBody)
         
         if (!resp.isSuccessful && resp.code() != 202) {
             val err = resp.errorBody()?.string()
             Log.e(Constants.TAG, "BACKEND ERROR: HTTP ${resp.code()} Body: $err")
-            throw RuntimeException("Backend error: HTTP ${resp.code()} ${err ?: ""}".trim())
+            throw RuntimeException("Backend error: HTTP ${resp.code()}")
         }
         
-        val initialBody = resp.body() ?: throw RuntimeException("Backend returned empty body")
-        val jobId = initialBody.jobId ?: return initialBody // Fallback if it returned direct result
+        val initialBody = resp.body() ?: throw RuntimeException("Empty response from backend")
+        val serverJobId = initialBody.jobId ?: jobId
 
-        // --- NEW: Firestore Polling ---
-        Log.i(Constants.TAG, "Job initiated: $jobId. Polling Firestore for results...")
+        Log.i(Constants.TAG, "STEP 3/3: Polling Firestore for results (Job: $serverJobId)...")
         
         var attempts = 0
-        while (attempts < 60) { // Poll for up to 5 minutes (5s * 60)
+        while (attempts < 60) { 
             kotlinx.coroutines.delay(5000)
-            val snap = db.collection(Constants.COLLECTION_JOBS).document(jobId).get().await()
+            val snap = db.collection(Constants.COLLECTION_JOBS).document(serverJobId).get().await()
             val status = snap.getString("status")
-            Log.d(Constants.TAG, "Job status: $status (Attempt ${attempts + 1}/60)")
+            Log.d(Constants.TAG, "Polling Status: $status (Attempt ${attempts + 1}/60)")
 
             if (status == "success") {
-                Log.i(Constants.TAG, "Job completed successfully!")
+                Log.i(Constants.TAG, "AI PROCESSING COMPLETED!")
                 return ResponseModel(
                     transcript = snap.getString("transcript") ?: "",
                     notes = snap.getString("notes") ?: "",
@@ -137,13 +128,13 @@ class MainRepository(
                     videoUrl = snap.getString("videoUrl") ?: ""
                 )
             } else if (status == "error") {
-                val error = snap.getString("error") ?: "Unknown AI processing error"
-                throw RuntimeException("AI Processing Failed: $error")
+                val error = snap.getString("error") ?: "AI Processing Error"
+                throw RuntimeException("AI Error: $error")
             }
             attempts++
         }
 
-        throw RuntimeException("Processing timeout. The AI is taking longer than expected. Please check your library in a few minutes.")
+        throw RuntimeException("AI processing timed out. Please check your library later.")
     }
 
     suspend fun saveRecordingResult(
@@ -169,14 +160,8 @@ class MainRepository(
             "topic" to topic,
             "createdAt" to FieldValue.serverTimestamp()
         )
-        Log.d(Constants.TAG, "Saving result to Firestore for user: $uid")
         db.collection(Constants.COLLECTION_RECORDINGS).document(id).set(payload).await()
-        
-        // Increment AI Summary Count for the user
-        db.collection(Constants.COLLECTION_USERS).document(uid)
-            .update("aiSummariesCount", FieldValue.increment(1))
-            
-        Log.i(Constants.TAG, "FIRESTORE SUCCESS: Record saved with ID: $id")
+        db.collection(Constants.COLLECTION_USERS).document(uid).update("aiSummariesCount", FieldValue.increment(1))
         return id
     }
 
@@ -204,4 +189,3 @@ class MainRepository(
         return doc.data
     }
 }
-

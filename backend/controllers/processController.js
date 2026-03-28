@@ -1,10 +1,11 @@
 import { transcribeWithWhisper, transcribeWithGemini, generateClaudeNotes, generateGeminiNotes } from "../services/aiService.js";
 import { createNotesPdf } from "../services/pdfService.js";
-import { uploadPdfForUser, uploadRecordingForUser, updateJobStatus } from "../services/firebaseService.js";
+import { uploadPdfForUser, uploadRecordingForUser, updateJobStatus, downloadFileFromStorage } from "../services/firebaseService.js";
 import { safeUnlink } from "../utils/fileHelper.js";
 import { generateD2Image, generateMermaidImage } from "../utils/mermaidHelper.js";
 import { extractMultipleFrames } from "../utils/visualHelper.js";
 import fs from "fs";
+import path from "path";
 import { v4 as uuidv4 } from "uuid";
 
 export async function processAudio(req, res, next) {
@@ -13,27 +14,33 @@ export async function processAudio(req, res, next) {
 
   try {
     const userId = req.user.uid;
-    const file = req.file;
-    const { contentType = "General", topic: providedTopic } = req.body;
+    const { fileUrl, contentType = "General", topic: providedTopic } = req.body;
 
-    if (!file) {
-      return res.status(400).json({ error: { message: "`file` is required" } });
+    if (!fileUrl) {
+      return res.status(400).json({ error: { message: "`fileUrl` (Firebase Storage path) is required" } });
     }
 
-    audioPath = file.path;
-    
     // 1. Respond immediately with 202 Accepted
     res.status(202).json({ 
       status: "processing", 
       jobId,
-      message: "Processing started. Please poll Firestore for results."
+      message: "Processing started. Downloading from Storage..."
     });
 
     // 2. Start Background Processing
     (async () => {
       let pdfPath;
       try {
-        await updateJobStatus(jobId, { status: "transcribing", userId });
+        await updateJobStatus(jobId, { status: "downloading", userId });
+
+        // Define local path for processing
+        const filename = path.basename(fileUrl);
+        audioPath = path.join("uploads", `${jobId}-${filename}`);
+
+        // Download from storage
+        await downloadFileFromStorage(fileUrl, audioPath);
+
+        await updateJobStatus(jobId, { status: "transcribing" });
 
         // --- STEP 1: TRANSCRIPTION ---
         let transcript;

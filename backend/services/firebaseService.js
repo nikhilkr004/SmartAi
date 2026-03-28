@@ -100,3 +100,17 @@ export async function updateJobStatus(jobId, data) {
     console.error(`[FIREBASE] Error updating job ${jobId}:`, err);
   }
 }
+export async function downloadFileFromStorage(storagePath, localPath) {
+  try {
+    const admin = await initFirebase();
+    const bucket = admin.storage().bucket();
+    
+    // If it's a full URL, we might need to extract the path, 
+    // but better to have the client send the storage path directly.
+    await bucket.file(storagePath).download({ destination: localPath });
+    console.log(`[FIREBASE] Downloaded ${storagePath} to ${localPath}`);
+  } catch (err) {
+    console.error(`[FIREBASE] Download failed for ${storagePath}:`, err);
+    throw new Error(`Firebase download error: ${err.message}`);
+  }
+}

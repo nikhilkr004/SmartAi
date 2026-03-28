@@ -5,7 +5,7 @@ import upload from "../config/multer.js";
 
 const router = Router();
 
-router.post("/process", verifyAuth, upload.single("file"), processAudio);
+router.post("/process", verifyAuth, processAudio);
 
 export default router;
 
