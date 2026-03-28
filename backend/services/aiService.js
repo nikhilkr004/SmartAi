@@ -35,10 +35,17 @@ export async function transcribeWithWhisper(audioPath, retryCount = 0) {
     console.log(`[OPENAI] Transcription complete in ${duration}s`);
     return transcription.text;
   } catch (err) {
-    const isNetworkError = err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT' || err.status === 502 || err.status === 503 || err.status === 504;
+    const isNetworkError = 
+      err.code === 'ECONNRESET' || 
+      err.cause?.code === 'ECONNRESET' || 
+      err.code === 'ETIMEDOUT' || 
+      err.cause?.code === 'ETIMEDOUT' ||
+      err.status === 502 || 
+      err.status === 503 || 
+      err.status === 504;
     
     if (isNetworkError && retryCount < 2) {
-      console.warn(`[OPENAI RETRY] Connection issue (${err.code || err.status}). Retrying in 2s...`);
+      console.warn(`[OPENAI RETRY] Connection issue (${err.code || err.cause?.code || err.status}). Retrying in 2s...`);
       await new Promise(resolve => setTimeout(resolve, 2000));
       return transcribeWithWhisper(audioPath, retryCount + 1);
     }

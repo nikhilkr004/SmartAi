@@ -58,7 +58,7 @@
                 android:id="@+id/tvMetadata"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="CSSO • WEEK 4   Oct 24, 2023"
+                android:text="Date and Time"
                 android:textColor="@color/text_sub"
                 android:textSize="12sp"
                 android:textStyle="bold" />
