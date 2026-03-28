@@ -39,13 +39,28 @@ export async function transcribeWithGemini(audioPath) {
     };
 
     // 1. Upload to Gemini File API
-    const uploadResult = await fileManager.uploadFile(audioPath, {
+    let uploadResult = await fileManager.uploadFile(audioPath, {
       mimeType: getMimeType(audioPath),
       displayName: path.basename(audioPath),
     });
 
     const fileUri = uploadResult.file.uri;
-    console.log(`[GEMINI] File uploaded: ${fileUri}`);
+    const fileName = uploadResult.file.name;
+    console.log(`[GEMINI] File uploaded: ${fileUri}. Waiting for processing...`);
+
+    // --- NEW: Wait for file to become ACTIVE ---
+    let file = await fileManager.getFile(fileName);
+    let attempts = 0;
+    while (file.state === "PROCESSING" && attempts < 15) {
+      console.log(`[GEMINI] File still processing... attempt ${attempts + 1}`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      file = await fileManager.getFile(fileName);
+      attempts++;
+    }
+
+    if (file.state !== "ACTIVE") {
+      throw new Error(`Gemini File API processing failed: ${file.state}`);
+    }
 
     // 2. Transcribe
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
