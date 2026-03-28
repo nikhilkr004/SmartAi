@@ -1,7 +1,6 @@
 import fs from "fs";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { GoogleAIFileManager } from "@google/generative-ai/server";
-import { Anthropic } from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import path from "path";
 import { safeUnlink } from "../utils/fileHelper.js";
@@ -150,104 +149,6 @@ export async function transcribeWithWhisper(audioPath, retryCount = 0) {
   }
 }
 
-// --- Claude Configuration ---
-function getClaudeClient() {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    console.warn("[CLAUDE] ANTHROPIC_API_KEY not found. Falling back to Gemini for notes.");
-    return null;
-  }
-  return new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-}
-
-export async function generateClaudeNotes(transcript, contentType = "General", topic = null) {
-  const anthropic = getClaudeClient();
-  if (!anthropic) return null; // Fallback will be handled in controller
-
-  console.log(`[CLAUDE] Generating Elite Notes for Topic: ${topic || 'Unspecified'}...`);
-  const startTime = Date.now();
-
-  try {
-    const response = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20240620",
-      max_tokens: 4000,
-      system: "You are a world-class academic scribe. Convert transcripts into 'Masterclass' study guides. Focus on structure, logic, and visual representation (Mermaid/Charts).",
-      messages: [
-        {
-          role: "user",
-          content: `
-            TRANSCRIPT:
-            ${transcript}
-
-            TASK: Create a professional study guide based on this lecture.
-            CONTEXT: ${contentType}${topic ? ` | TOPIC: ${topic}` : ""}.
-
-            STRUCTURE MUST BE:
-            1. # EXECUTIVE SUMMARY: 3 punchy, high-impact points.
-            2. # CONCEPTUAL DEEP DIVE: Use ## for each core concept. Include [TIP], [DEF], [HINT], and [EX] callouts.
-            3. # VISUAL FLOWS: Provide exactly TWO (2) \`\`\`mermaid graph TD blocks explaining the logic.
-            4. # DATA INSIGHTS: Provide ONE (1) \`\`\`chartjs block if any data exists.
-            5. # MASTERCLASS CHEAT SHEET: A final glossary or formula list.
-
-            STYLE: Use bold text for key terms. Keep points clear and professional. Avoid verbosity.
-          `
-        }
-      ]
-    });
-
-    const duration = (Date.now() - startTime) / 1000;
-    console.log(`[CLAUDE] Notes generated in ${duration}s`);
-    return response.content[0].text;
-  } catch (err) {
-    console.error("[CLAUDE ERROR]", err);
-    return null; // Let the controller handle fallback
-  }
-}
-
-// --- OpenAI Configuration (Notes) ---
-export async function generateGPTNotes(transcript, contentType = "General", topic = null) {
-  const openai = getOpenAIClient();
-  if (!openai) return null;
-
-  console.log(`[GPT] Generating Professional Notes for Topic: ${topic || 'Unspecified'}...`);
-  const startTime = Date.now();
-
-  try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are a world-class academic scribe. Convert transcripts into 'Masterclass' study guides. Focus on structure, logic, and visual representation (Mermaid/Charts)."
-        },
-        {
-          role: "user",
-          content: `
-            TRANSCRIPT:
-            ${transcript}
-
-            TASK: Create a professional study guide based on this lecture.
-            CONTEXT: ${contentType}${topic ? ` | TOPIC: ${topic}` : ""}.
-
-            STRUCTURE MUST BE:
-            1. # EXECUTIVE SUMMARY: 3 punchy points.
-            2. # CONCEPTUAL DEEP DIVE: Use ## for concepts. Include [TIP], [DEF], [HINT], [EX].
-            3. # VISUAL FLOWS: Provide TWO (2) \`\`\`mermaid blocks.
-            4. # DATA INSIGHTS: Provide ONE (1) \`\`\`chartjs block.
-            5. # MASTERCLASS CHEAT SHEET: Final glossary.
-          `
-        }
-      ]
-    });
-
-    const duration = (Date.now() - startTime) / 1000;
-    console.log(`[GPT] Notes generated in ${duration}s`);
-    return response.choices[0].message.content;
-  } catch (err) {
-    console.error("[GPT ERROR]", err);
-    return null;
-  }
-}
-
 // --- Gemini Configuration (Notes) ---
 export async function generateGeminiNotes(transcript, contentType = "General", topic = null) {
   const genAI = getGeminiClient();
@@ -283,3 +184,4 @@ export async function generateGeminiNotes(transcript, contentType = "General", t
     return null;
   }
 }
+

@@ -1,4 +1,3 @@
-import { transcribeWithWhisper, transcribeWithGemini, generateClaudeNotes, generateGeminiNotes } from "../services/aiService.js";
 import { createNotesPdf } from "../services/pdfService.js";
 import { uploadPdfForUser, uploadRecordingForUser, updateJobStatus, downloadFileFromStorage } from "../services/firebaseService.js";
 import { safeUnlink } from "../utils/fileHelper.js";
@@ -44,6 +43,7 @@ export async function processAudio(req, res, next) {
 
         // --- STEP 1: TRANSCRIPTION ---
         let transcript;
+        const { transcribeWithGemini, transcribeWithWhisper } = await import("../services/aiService.js");
         try {
           transcript = await transcribeWithGemini(audioPath);
         } catch (err) {
@@ -54,12 +54,10 @@ export async function processAudio(req, res, next) {
         await updateJobStatus(jobId, { status: "generating_notes", transcript });
 
         // --- STEP 2: NOTES ---
-        let finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
-        if (!finalNotes) {
-          finalNotes = await generateGeminiNotes(transcript, contentType, providedTopic);
-        }
+        const { generateGeminiNotes } = await import("../services/aiService.js");
+        const finalNotes = await generateGeminiNotes(transcript, contentType, providedTopic);
 
-        if (!finalNotes) throw new Error("AI Note generation failed.");
+        if (!finalNotes) throw new Error("Gemini Note generation failed.");
 
         await updateJobStatus(jobId, { status: "finalizing" });
 
