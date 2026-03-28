@@ -8,12 +8,11 @@ import { safeUnlink } from "../utils/fileHelper.js";
 import { extractAudio } from "../utils/visualHelper.js";
 
 // --- OpenAI Configuration (Whisper) ---
-function getOpenAIClient() {
-  if (!process.env.OPENAI_API_KEY) {
-    console.warn("[OPENAI] API Key not found.");
-    return null;
-  }
-  return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  return new OpenAI({ 
+    apiKey: process.env.OPENAI_API_KEY,
+    maxRetries: 5,
+    timeout: 120 * 1000 // 2 minutes
+  });
 }
 
 export async function transcribeWithWhisper(audioPath, retryCount = 0) {
@@ -32,11 +31,11 @@ export async function transcribeWithWhisper(audioPath, retryCount = 0) {
     const stats = fs.statSync(audioPath);
     const sizeInMB = stats.size / (1024 * 1024);
 
-    if (sizeInMB > 24) {
-      console.log(`[OPENAI] File size (${sizeInMB.toFixed(1)}MB) exceeds 25MB limit. Compressing...`);
+    if (sizeInMB > 20) {
+      console.log(`[OPENAI] File size (${sizeInMB.toFixed(1)}MB) is near limit. Compressing...`);
       processingPath = await extractAudio(audioPath);
       isTempFile = true;
-      console.log(`[OPENAI] Compressed to ${fs.statSync(processingPath).size / (1024 * 1024).toFixed(1)}MB`);
+      console.log(`[OPENAI] Compressed to ${(fs.statSync(processingPath).size / (1024 * 1024)).toFixed(1)}MB`);
     }
 
     const transcription = await openai.audio.transcriptions.create({
@@ -57,9 +56,9 @@ export async function transcribeWithWhisper(audioPath, retryCount = 0) {
       err.status === 503 || 
       err.status === 504;
     
-    if (isNetworkError && retryCount < 2) {
-      console.warn(`[OPENAI RETRY] Connection issue (${err.code || err.cause?.code || err.status}). Retrying in 2s...`);
-      await new Promise(resolve => setTimeout(resolve, 2000));
+    if (isNetworkError && retryCount < 5) {
+      console.warn(`[OPENAI RETRY] Connection issue (${err.code || err.cause?.code || err.status}). Retrying in 5s (Attempt ${retryCount + 1}/5)...`);
+      await new Promise(resolve => setTimeout(resolve, 5000));
       return transcribeWithWhisper(audioPath, retryCount + 1);
     }
 
