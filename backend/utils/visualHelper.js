@@ -3,10 +3,33 @@ import ffmpegPath from "ffmpeg-static";
 import path from "path";
 import { ensureDir, getTmpDir } from "./fileHelper.js";
 
-// Ensure fluent-ffmpeg knows where the binary is (crucial for Railway)
-if (ffmpegPath) {
-  ffmpeg.setFfmpegPath(ffmpegPath);
-  console.log("[VISUAL] FFMPEG Path set:", ffmpegPath);
+import { execSync } from "child_process";
+import fs from "fs";
+
+// Robust FFMPEG detection
+let finalFfmpegPath = "";
+
+try {
+  // 1. Try system ffmpeg
+  execSync("ffmpeg -version", { stdio: "ignore" });
+  finalFfmpegPath = "ffmpeg";
+  console.log("[VISUAL] Using system FFMPEG binary.");
+} catch (e) {
+  // 2. Fallback to ffmpeg-static
+  if (ffmpegPath) {
+    if (fs.existsSync(ffmpegPath)) {
+      finalFfmpegPath = ffmpegPath;
+      console.log("[VISUAL] FFMPEG-static found at:", ffmpegPath);
+    } else {
+      console.error("[VISUAL ERROR] FFMPEG-static path returned but file does not exist:", ffmpegPath);
+    }
+  }
+}
+
+if (finalFfmpegPath) {
+  ffmpeg.setFfmpegPath(finalFfmpegPath);
+} else {
+  console.error("[VISUAL ERROR] No FFMPEG binary found in system or node_modules!");
 }
 import { v4 as uuidv4 } from "uuid";
 
