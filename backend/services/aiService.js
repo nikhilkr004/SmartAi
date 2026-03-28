@@ -25,9 +25,22 @@ export async function transcribeWithWhisper(audioPath, retryCount = 0) {
   console.log(`[OPENAI] Transcribing ${audioPath} (Attempt ${retryCount + 1})...`);
   const startTime = Date.now();
   
+  let processingPath = audioPath;
+  let isTempFile = false;
+
   try {
+    const stats = fs.statSync(audioPath);
+    const sizeInMB = stats.size / (1024 * 1024);
+
+    if (sizeInMB > 24) {
+      console.log(`[OPENAI] File size (${sizeInMB.toFixed(1)}MB) exceeds 25MB limit. Compressing...`);
+      processingPath = await extractAudio(audioPath);
+      isTempFile = true;
+      console.log(`[OPENAI] Compressed to ${fs.statSync(processingPath).size / (1024 * 1024).toFixed(1)}MB`);
+    }
+
     const transcription = await openai.audio.transcriptions.create({
-      file: fs.createReadStream(audioPath),
+      file: fs.createReadStream(processingPath),
       model: "whisper-1",
     });
 
@@ -61,6 +74,10 @@ export async function transcribeWithWhisper(audioPath, retryCount = 0) {
     }
 
     throw new Error(`Transcription failed: ${err.message || "Unknown error"}`);
+  } finally {
+    if (isTempFile && processingPath) {
+      await safeUnlink(processingPath);
+    }
   }
 }
 
