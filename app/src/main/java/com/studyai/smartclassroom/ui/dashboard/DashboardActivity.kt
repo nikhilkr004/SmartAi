@@ -357,7 +357,7 @@ class DashboardActivity : AppCompatActivity() {
      *
      * This logs success / failure to Logcat.
      */
-    private fun runApiConnectivityTestIfNeeded(file: File) {
+    private fun runApiConnectivityTestIfNeeded() {
         val user = FirebaseAuth.getInstance().currentUser ?: return
         lifecycleScope.launch {
             try {
@@ -368,7 +368,7 @@ class DashboardActivity : AppCompatActivity() {
                     return@launch
                 }
                 Log.d(Constants.TAG, "ID Token fetched successfully. Starting connectivity test...")
-                ApiTestHelper.testProcessEndpoint(token = token, file = file, scope = lifecycleScope)
+                ApiTestHelper.testProcessEndpoint(token = token, scope = lifecycleScope)
             } catch (e: Exception) {
                 Log.e(Constants.TAG, "API TEST FAILURE: Failed to get ID Token! Reason: ${e.message}", e)
                 Log.e(Constants.TAG, "CRITICAL: This usually means your SHA-1 fingerprint is missing in Firebase Console.")

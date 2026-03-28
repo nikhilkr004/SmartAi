@@ -6,42 +6,34 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
-import java.io.File
 
 /**
  * Temporary connectivity test helper.
  *
- * Call this once (e.g., after login) to verify your backend is reachable and the multipart contract works.
- * It logs:
- * - success response body
- * - or full error body + exception message
+ * Updated for Direct-to-Storage: Sends a JSON body with a test storage path.
  */
 object ApiTestHelper {
 
     fun testProcessEndpoint(
         token: String,
-        file: File,
         scope: CoroutineScope = CoroutineScope(Dispatchers.Main)
     ) {
         scope.launch {
             try {
-                Log.d(Constants.TAG, "API TEST: File = ${file.name}, size = ${file.length()}")
-                val fileBody = file.asRequestBody("application/octet-stream".toMediaTypeOrNull())
-                val filePart = MultipartBody.Part.createFormData("file", file.name, fileBody)
+                Log.d(Constants.TAG, "API TEST: Sending JSON request to /process...")
+                
+                val requestBody = mapOf(
+                    "fileUrl" to "test_recordings/identity_check.mp4",
+                    "contentType" to "General",
+                    "topic" to "Connectivity Test"
+                )
 
-                Log.d(Constants.TAG, "API TEST: Sending request to /process...")
-                val contentTypeBody = "General".toRequestBody("text/plain".toMediaTypeOrNull())
-                val topicBody = "Test Topic".toRequestBody("text/plain".toMediaTypeOrNull())
                 val resp = withContext(Dispatchers.IO) {
-                    RetrofitClient.api.processRecording("Bearer $token", filePart, contentTypeBody, topicBody)
+                    RetrofitClient.api.processRecording("Bearer $token", requestBody)
                 }
 
-                if (resp.isSuccessful) {
-                    Log.i(Constants.TAG, "API TEST SUCCESS: Response: ${resp.body()}")
+                if (resp.isSuccessful || resp.code() == 202) {
+                    Log.i(Constants.TAG, "API TEST SUCCESS: Status ${resp.code()} Response: ${resp.body()}")
                 } else {
                     val errorText = resp.errorBody()?.string()
                     Log.e(Constants.TAG, "API TEST FAILED: HTTP ${resp.code()} Body: $errorText")
@@ -52,4 +44,3 @@ object ApiTestHelper {
         }
     }
 }
-
