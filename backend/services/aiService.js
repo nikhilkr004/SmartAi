@@ -63,7 +63,7 @@ export async function transcribeWithGemini(audioPath) {
     }
 
     // 2. Transcribe
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     const result = await model.generateContent([
       {
         fileData: {
@@ -253,7 +253,7 @@ export async function generateGeminiNotes(transcript, contentType = "General", t
   const genAI = getGeminiClient();
   if (!genAI) return null;
 
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+  const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
   console.log(`[GEMINI] Generating Professional Notes for Topic: ${topic || 'Unspecified'}...`);
   const startTime = Date.now();
 

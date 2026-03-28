@@ -23,10 +23,11 @@ async function diagnostic() {
     const fileManager = new GoogleAIFileManager(key);
     const genAI = new GoogleGenerativeAI(key);
 
-    // List recent files as a simple "ping"
-    const listFilesResponse = await fileManager.listFiles();
-    console.log("✅ Success! Gemini File API responded.");
+    const listModelsResponse = await genAI.getGenerativeModel({ model: "gemini-1.5-flash" }); // Dummy to get genAI
+    const models = await genAI.listModels();
+    console.log("Available models:", models.models.map(m => m.name));
     
+    const modelName = "models/gemini-1.5-flash"; 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent("Hello, are you ready for transcription tasks?");
     console.log("✅ Success! Gemini Model responded:", result.response.text());
