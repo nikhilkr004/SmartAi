@@ -248,3 +248,38 @@ export async function generateGPTNotes(transcript, contentType = "General", topi
   }
 }
 
+// --- Gemini Configuration (Notes) ---
+export async function generateGeminiNotes(transcript, contentType = "General", topic = null) {
+  const genAI = getGeminiClient();
+  if (!genAI) return null;
+
+  const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+  console.log(`[GEMINI] Generating Professional Notes for Topic: ${topic || 'Unspecified'}...`);
+  const startTime = Date.now();
+
+  try {
+    const result = await model.generateContent(`
+      TRANSCRIPT:
+      ${transcript}
+
+      TASK: Create a professional study guide based on this lecture.
+      CONTEXT: ${contentType}${topic ? ` | TOPIC: ${topic}` : ""}.
+
+      STRUCTURE MUST BE:
+      1. # EXECUTIVE SUMMARY: 3 punchy, high-impact points.
+      2. # CONCEPTUAL DEEP DIVE: Use ## for each core concept. Include [TIP], [DEF], [HINT], and [EX] callouts.
+      3. # VISUAL FLOWS: Provide exactly TWO (2) \`\`\`mermaid graph TD blocks explaining the logic.
+      4. # DATA INSIGHTS: Provide ONE (1) \`\`\`chartjs block if any data exists.
+      5. # MASTERCLASS CHEAT SHEET: A final glossary or formula list.
+
+      STYLE: Use bold text for key terms. Keep points clear and professional. Avoid verbosity.
+    `);
+
+    const duration = (Date.now() - startTime) / 1000;
+    console.log(`[GEMINI] Notes generated in ${duration}s`);
+    return result.response.text();
+  } catch (err) {
+    console.error("[GEMINI NOTES ERROR]", err);
+    return null;
+  }
+}
