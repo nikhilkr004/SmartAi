@@ -8,6 +8,11 @@ import { safeUnlink } from "../utils/fileHelper.js";
 import { extractAudio } from "../utils/visualHelper.js";
 
 // --- OpenAI Configuration (Whisper) ---
+function getOpenAIClient() {
+  if (!process.env.OPENAI_API_KEY) {
+    console.warn("[OPENAI] API Key not found.");
+    return null;
+  }
   return new OpenAI({ 
     apiKey: process.env.OPENAI_API_KEY,
     maxRetries: 5,
