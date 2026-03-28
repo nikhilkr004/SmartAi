@@ -27,6 +27,7 @@ export async function transcribeWithGemini(audioPath) {
   console.log(`[GEMINI] Transcribing ${audioPath} with 1.5 Flash...`);
   const startTime = Date.now();
 
+  try {
     // Helper to get correct MIME type for Gemini
     const getMimeType = (filePath) => {
       const ext = path.extname(filePath).toLowerCase();
