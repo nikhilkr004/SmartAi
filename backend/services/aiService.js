@@ -16,11 +16,13 @@ function getOpenAIClient() {
   return new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 }
 
-export async function transcribeWithWhisper(audioPath) {
+export async function transcribeWithWhisper(audioPath, retryCount = 0) {
   const openai = getOpenAIClient();
-  if (!openai) return null;
+  if (!openai) {
+    throw new Error("OpenAI API Key not found. Please add 'OPENAI_API_KEY' to your Environment Variables in the Render Dashboard.");
+  }
 
-  console.log(`[OPENAI] Transcribing ${audioPath}...`);
+  console.log(`[OPENAI] Transcribing ${audioPath} (Attempt ${retryCount + 1})...`);
   const startTime = Date.now();
   
   try {
@@ -33,8 +35,25 @@ export async function transcribeWithWhisper(audioPath) {
     console.log(`[OPENAI] Transcription complete in ${duration}s`);
     return transcription.text;
   } catch (err) {
+    const isNetworkError = err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT' || err.status === 502 || err.status === 503 || err.status === 504;
+    
+    if (isNetworkError && retryCount < 2) {
+      console.warn(`[OPENAI RETRY] Connection issue (${err.code || err.status}). Retrying in 2s...`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return transcribeWithWhisper(audioPath, retryCount + 1);
+    }
+
     console.error("[OPENAI ERROR]", err);
-    return null;
+    
+    if (err.status === 401) {
+      throw new Error("Invalid OpenAI API Key. Please check your Render Environment Variables.");
+    }
+    
+    if (err.code === 'ECONNRESET') {
+      throw new Error("OpenAI Connection Reset. The network connection was closed unexpectedly. Please try again in a few moments.");
+    }
+
+    throw new Error(`Transcription failed: ${err.message || "Unknown error"}`);
   }
 }
 

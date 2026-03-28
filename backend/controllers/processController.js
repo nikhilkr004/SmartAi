@@ -45,10 +45,6 @@ export async function processAudio(req, res, next) {
     console.log("[PROCESS] Attempting Transcription (OpenAI Whisper)...");
     let transcript = await transcribeWithWhisper(audioPath);
 
-    if (!transcript) {
-      throw new Error("OpenAI API Key not found or invalid. Please add 'OPENAI_API_KEY' to your Environment Variables in the Render Dashboard.");
-    }
-
     // --- STEP 2: PROFESSIONAL NOTES (Priority: Claude 3.5 -> GPT-4o) ---
     console.log("[PROCESS] Generating Professional Notes...");
     let finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
