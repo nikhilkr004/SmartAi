@@ -27,10 +27,19 @@ export async function transcribeWithGemini(audioPath) {
   console.log(`[GEMINI] Transcribing ${audioPath} with 1.5 Flash...`);
   const startTime = Date.now();
 
-  try {
+    // Helper to get correct MIME type for Gemini
+    const getMimeType = (filePath) => {
+      const ext = path.extname(filePath).toLowerCase();
+      if (ext === ".mp4") return "video/mp4";
+      if (ext === ".mp3") return "audio/mpeg";
+      if (ext === ".wav") return "audio/wav";
+      if (ext === ".m4a") return "audio/x-m4a";
+      return "audio/mpeg"; // Default fallback
+    };
+
     // 1. Upload to Gemini File API
     const uploadResult = await fileManager.uploadFile(audioPath, {
-      mimeType: audioPath.endsWith(".mp4") ? "video/mp4" : "audio/mpeg",
+      mimeType: getMimeType(audioPath),
       displayName: path.basename(audioPath),
     });
 

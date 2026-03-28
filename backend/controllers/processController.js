@@ -1,4 +1,4 @@
-import { transcribeWithWhisper, generateClaudeNotes, generateGPTNotes } from "../services/aiService.js";
+import { transcribeWithWhisper, transcribeWithGemini, generateClaudeNotes, generateGPTNotes, generateGeminiNotes } from "../services/aiService.js";
 import { createNotesPdf } from "../services/pdfService.js";
 import { uploadPdfForUser, uploadRecordingForUser } from "../services/firebaseService.js";
 import { safeUnlink } from "../utils/fileHelper.js";
@@ -51,13 +51,13 @@ export async function processAudio(req, res, next) {
       transcript = await transcribeWithWhisper(audioPath);
     }
 
-    // --- STEP 2: PROFESSIONAL NOTES (Priority: Claude 3.5 -> GPT-4o) ---
+    // --- STEP 2: PROFESSIONAL NOTES (Priority: Claude 3.5 -> Gemini 1.5 Pro) ---
     console.log("[PROCESS] Generating Professional Notes...");
     let finalNotes = await generateClaudeNotes(transcript, contentType, providedTopic);
 
     if (!finalNotes) {
-      console.log("[PROCESS] Claude unavailable. Using GPT-4o fallback...");
-      finalNotes = await generateGPTNotes(transcript, contentType, providedTopic);
+      console.warn("[PROCESS] Claude failed, falling back to Gemini 1.5 Pro...");
+      finalNotes = await generateGeminiNotes(transcript, contentType, providedTopic);
     }
 
     if (!finalNotes) {
