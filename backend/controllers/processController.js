@@ -61,7 +61,7 @@ export async function processAudio(req, res, next) {
     }
 
     if (!finalNotes) {
-      throw new Error("Note generation failed. Ensure your AI API Keys (Anthropic/OpenAI) are set in the Render Dashboard.");
+      throw new Error("Note generation failed. Ensure your AI API Keys (Anthropic/Gemini) are set in the Render Dashboard.");
     }
 
     // --- STEP 3: ASYNC RECORDING UPLOAD (Parallel) ---
