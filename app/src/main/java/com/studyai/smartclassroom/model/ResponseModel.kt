@@ -11,7 +11,7 @@ data class ResponseModel(
     @SerializedName("error") val error: String? = null,
     @SerializedName("transcript") val transcript: String = "",
     @SerializedName("notes") val notes: String = "",
-    @SerializedName(value = "pdfUrl", alternate = ["pdf_url"]) val pdfUrl: String = "",
-    @SerializedName(value = "videoUrl", alternate = ["video_url"]) val videoUrl: String = ""
+    @SerializedName("pdfUrl") val pdfUrl: String = "",
+    @SerializedName("videoUrl") val videoUrl: String = ""
 )
 
