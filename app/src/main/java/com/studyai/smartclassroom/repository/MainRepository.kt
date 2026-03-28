@@ -108,14 +108,41 @@ class MainRepository(
         val topicBody = topic.toRequestBody("text/plain".toMediaTypeOrNull())
         val resp = RetrofitClient.api.processRecording("Bearer $token", filePart, contentTypeBody, topicBody)
         
-        if (!resp.isSuccessful) {
+        if (!resp.isSuccessful && resp.code() != 202) {
             val err = resp.errorBody()?.string()
             Log.e(Constants.TAG, "BACKEND ERROR: HTTP ${resp.code()} Body: $err")
             throw RuntimeException("Backend error: HTTP ${resp.code()} ${err ?: ""}".trim())
         }
         
-        Log.i(Constants.TAG, "BACKEND SUCCESS: Response: ${resp.body()}")
-        return resp.body() ?: throw RuntimeException("Backend returned empty body")
+        val initialBody = resp.body() ?: throw RuntimeException("Backend returned empty body")
+        val jobId = initialBody.jobId ?: return initialBody // Fallback if it returned direct result
+
+        // --- NEW: Firestore Polling ---
+        Log.i(Constants.TAG, "Job initiated: $jobId. Polling Firestore for results...")
+        
+        var attempts = 0
+        while (attempts < 60) { // Poll for up to 5 minutes (5s * 60)
+            kotlinx.coroutines.delay(5000)
+            val snap = db.collection(Constants.COLLECTION_JOBS).document(jobId).get().await()
+            val status = snap.getString("status")
+            Log.d(Constants.TAG, "Job status: $status (Attempt ${attempts + 1}/60)")
+
+            if (status == "success") {
+                Log.i(Constants.TAG, "Job completed successfully!")
+                return ResponseModel(
+                    transcript = snap.getString("transcript") ?: "",
+                    notes = snap.getString("notes") ?: "",
+                    pdfUrl = snap.getString("pdfUrl") ?: "",
+                    videoUrl = snap.getString("videoUrl") ?: ""
+                )
+            } else if (status == "error") {
+                val error = snap.getString("error") ?: "Unknown AI processing error"
+                throw RuntimeException("AI Processing Failed: $error")
+            }
+            attempts++
+        }
+
+        throw RuntimeException("Processing timeout. The AI is taking longer than expected. Please check your library in a few minutes.")
     }
 
     suspend fun saveRecordingResult(

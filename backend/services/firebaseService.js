@@ -87,3 +87,16 @@ export async function getUserRecordingCount(userId) {
     return 0;
   }
 }
+export async function updateJobStatus(jobId, data) {
+  try {
+    const admin = await initFirebase();
+    const db = admin.firestore();
+    await db.collection("processing_jobs").doc(jobId).set({
+      ...data,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+    console.log(`[FIREBASE] Job ${jobId} updated: ${data.status}`);
+  } catch (err) {
+    console.error(`[FIREBASE] Error updating job ${jobId}:`, err);
+  }
+}

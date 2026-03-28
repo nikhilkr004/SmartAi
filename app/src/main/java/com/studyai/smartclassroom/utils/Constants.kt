@@ -9,6 +9,7 @@ object Constants {
     // Firestore
     const val COLLECTION_USERS = "users"
     const val COLLECTION_RECORDINGS = "recordings"
+    const val COLLECTION_JOBS = "processing_jobs"
 
     // Intent extras
     const val EXTRA_TRANSCRIPT = "extra_transcript"
