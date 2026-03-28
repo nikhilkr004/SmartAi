@@ -41,9 +41,15 @@ export async function processAudio(req, res, next) {
 
     const startTime = Date.now();
 
-    // --- STEP 1: TRANSCRIPTION (Priority: OpenAI Whisper) ---
-    console.log("[PROCESS] Attempting Transcription (OpenAI Whisper)...");
-    let transcript = await transcribeWithWhisper(audioPath);
+    // --- STEP 1: TRANSCRIPTION (Priority: Gemini 1.5 Flash for Reliability) ---
+    console.log("[PROCESS] Attempting Transcription (Gemini 1.5 Flash)...");
+    let transcript;
+    try {
+      transcript = await transcribeWithGemini(audioPath);
+    } catch (geminiError) {
+      console.warn("[PROCESS] Gemini failed, falling back to Whisper...", geminiError.message);
+      transcript = await transcribeWithWhisper(audioPath);
+    }
 
     // --- STEP 2: PROFESSIONAL NOTES (Priority: Claude 3.5 -> GPT-4o) ---
     console.log("[PROCESS] Generating Professional Notes...");

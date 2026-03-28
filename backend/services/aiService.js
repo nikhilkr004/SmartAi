@@ -7,17 +7,57 @@ import path from "path";
 import { safeUnlink } from "../utils/fileHelper.js";
 import { extractAudio } from "../utils/visualHelper.js";
 
-// --- OpenAI Configuration (Whisper) ---
-function getOpenAIClient() {
-  if (!process.env.OPENAI_API_KEY) {
-    console.warn("[OPENAI] API Key not found.");
+// --- Gemini Configuration (Transcription & Backup) ---
+function getGeminiClient() {
+  if (!process.env.GEMINI_API_KEY) {
+    console.warn("[GEMINI] API Key not found.");
     return null;
   }
-  return new OpenAI({ 
-    apiKey: process.env.OPENAI_API_KEY,
-    maxRetries: 5,
-    timeout: 120 * 1000 // 2 minutes
-  });
+  return new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+}
+
+const fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY || "");
+
+export async function transcribeWithGemini(audioPath) {
+  const genAI = getGeminiClient();
+  if (!genAI) {
+    throw new Error("Gemini API Key missing. Required for reliable transcription.");
+  }
+
+  console.log(`[GEMINI] Transcribing ${audioPath} with 1.5 Flash...`);
+  const startTime = Date.now();
+
+  try {
+    // 1. Upload to Gemini File API
+    const uploadResult = await fileManager.uploadFile(audioPath, {
+      mimeType: audioPath.endsWith(".mp4") ? "video/mp4" : "audio/mpeg",
+      displayName: path.basename(audioPath),
+    });
+
+    const fileUri = uploadResult.file.uri;
+    console.log(`[GEMINI] File uploaded: ${fileUri}`);
+
+    // 2. Transcribe
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const result = await model.generateContent([
+      {
+        fileData: {
+          mimeType: uploadResult.file.mimeType,
+          fileUri: fileUri,
+        },
+      },
+      { text: "Accurately transcribe the audio content of this file. Return only the transcript text." },
+    ]);
+
+    const transcript = result.response.text();
+    const duration = (Date.now() - startTime) / 1000;
+    console.log(`[GEMINI] Transcription complete in ${duration}s`);
+    
+    return transcript;
+  } catch (err) {
+    console.error("[GEMINI ERROR]", err);
+    throw new Error(`Gemini Transcription failed: ${err.message}`);
+  }
 }
 
 export async function transcribeWithWhisper(audioPath, retryCount = 0) {
