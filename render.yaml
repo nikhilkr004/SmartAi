@@ -1,12 +1,12 @@
 services:
   - type: web
     name: studyai-backend
-    runtime: node
+    runtime: python
     plan: starter
     region: singapore
-    rootDir: backend
-    buildCommand: npm install
-    startCommand: npm start
+    rootDir: backend_python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
-      - key: NODE_VERSION
-        value: 20
+      - key: PYTHON_VERSION
+        value: 3.11.6
