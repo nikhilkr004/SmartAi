@@ -7,6 +7,10 @@ local.properties
 # Backend secrets
 backend/.env
 backend/firebase-credentials.json
+backend_python/.env
+backend_python/config/firebase-credentials.json
+backend_python/uploads/*
+!backend_python/uploads/.gitignore
 
 # Android secrets
 app/google-services.json
