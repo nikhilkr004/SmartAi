@@ -18,11 +18,11 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
     
     try:
         # --- 1. DOWNLOAD ---
-        await update_job_status(job_id, {"status": "downloading", "progress": 10})
+        update_job_status(job_id, {"status": "downloading", "progress": 10})
         download_file_from_storage(storage_url, local_audio)
 
         # --- 2. TRANSCRIBE ---
-        await update_job_status(job_id, {"status": "transcribing", "progress": 30})
+        update_job_status(job_id, {"status": "transcribing", "progress": 30})
         try:
             transcript = await transcribe_with_gemini(local_audio)
         except:
@@ -33,14 +33,14 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
             raise Exception("Transcription failed on all providers.")
 
         # --- 3. GENERATE NOTES ---
-        await update_job_status(job_id, {"status": "generating_notes", "progress": 60, "transcript": transcript})
+        update_job_status(job_id, {"status": "generating_notes", "progress": 60, "transcript": transcript})
         notes = await generate_gemini_notes(transcript, content_type, topic)
         
         if not notes:
             raise Exception("Note generation failed.")
 
         # --- 4. EXPORT (PDF & PPT) ---
-        await update_job_status(job_id, {"status": "finalizing", "progress": 85})
+        update_job_status(job_id, {"status": "finalizing", "progress": 85})
         
         # Create PDF
         create_notes_pdf(notes, transcript, topic or "Lecture", local_pdf)
@@ -51,7 +51,7 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
         ppt_url = upload_file_to_storage(local_ppt, f"users/{user_id}/presentations/{job_id}.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation")
 
         # --- 5. SUCCESS ---
-        await update_job_status(job_id, {
+        update_job_status(job_id, {
             "status": "success", 
             "progress": 100,
             "pdfUrl": pdf_url, 
@@ -61,7 +61,7 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
 
     except Exception as e:
         print(f"[BG-PROCESS ERROR] {str(e)}")
-        await update_job_status(job_id, {"status": "failed", "error": str(e)})
+        update_job_status(job_id, {"status": "failed", "error": str(e)})
     finally:
         # Cleanup
         safe_unlink(local_audio)
