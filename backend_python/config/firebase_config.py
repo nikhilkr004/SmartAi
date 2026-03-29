@@ -7,7 +7,13 @@ _app = None
 def init_firebase():
     global _app
     if _app is None:
-        cert_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "backend_python/config/firebase-credentials.json")
+        cert_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
+        if not cert_path:
+            # Check relative to rootDir (Render) then project root (Local)
+            if os.path.exists("config/firebase-credentials.json"):
+                cert_path = "config/firebase-credentials.json"
+            else:
+                cert_path = "backend_python/config/firebase-credentials.json"
         bucket_name = os.getenv("FIREBASE_STORAGE_BUCKET")
         
         try:

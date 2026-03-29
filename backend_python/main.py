@@ -52,7 +52,7 @@ async def start_process(req: ProcessRequest, request: Request, background_tasks:
                 user_id = decoded_token['uid']
             except Exception as e:
                 print(f"[AUTH ERROR] Token verification failed: {str(e)}")
-                raise HTTPException(status_code=401, detail="Invalid Auth Token")
+                raise HTTPException(status_code=401, detail=f"Invalid Auth Token: {str(e)}")
         else:
             raise HTTPException(status_code=401, detail="Missing userId in body and no valid Bearer token")
 
