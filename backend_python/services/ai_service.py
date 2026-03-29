@@ -1,8 +1,8 @@
 import os
 import time
 import google.generativeai as genai
-from google.generativeai import mirroring
 import openai
+from typing import Optional
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -80,7 +80,7 @@ async def transcribe_with_whisper(audio_path: str) -> str:
         print(f"[WHISPER ERROR] {str(e)}")
         raise e
 
-async def generate_gemini_notes(transcript: str, content_type: str = "General", topic: str = None) -> str:
+async def generate_gemini_notes(transcript: str, content_type: str = "General", topic: Optional[str] = None) -> Optional[str]:
     """
     Generates study notes using Gemini 2.5 Pro.
     """
