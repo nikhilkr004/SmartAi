@@ -8,11 +8,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Global client for the new SDK
-client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+# Global client for the new SDK, explicitly using 'v1' to avoid v1beta 404 errors
+client = genai.Client(
+    api_key=os.getenv("GEMINI_API_KEY"),
+    http_options={'api_version': 'v1'}
+)
 
-# Use the latest standardized model names for the new SDK
-LITE_MODEL = "gemini-2.0-flash-lite"
+# Use stable, production-ready model identifiers
+LITE_MODEL = "gemini-2.0-flash"
 FLASH_MODEL = "gemini-1.5-flash"
 
 async def transcribe_with_gemini(audio_path: str) -> str:
@@ -75,7 +78,7 @@ async def generate_gemini_notes(transcript: str, content_type: str = "General", 
         # Use the highly intelligent Live Preview / Flash model
         # 3.1 Live Preview was models/gemini-3.1-flash-live-preview
         # For the new SDK, we use gemini-2.0-flash or gemini-2.0-pro-exp if available
-        model_name = "gemini-2.0-flash" 
+        model_name = "gemini-1.5-pro" 
         
         prompt = f"""
         TRANSCRIPT:
