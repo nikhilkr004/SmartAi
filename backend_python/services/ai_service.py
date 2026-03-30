@@ -12,12 +12,12 @@ load_dotenv()
 # Global client for the new SDK, explicitly using 'v1' to avoid v1beta 404 errors
 client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY"),
-    http_options={'api_version': 'v1'}
+    http_options={'api_version': 'v1beta'}
 )
 
 # Use stable, production-ready model identifiers
-LITE_MODEL = "gemini-2.0-flash"
-FLASH_MODEL = "gemini-1.5-flash"
+LITE_MODEL = "models/gemini-2.0-flash-lite-preview-02-05" # Most stable for v1beta
+FLASH_MODEL = "models/gemini-1.5-flash"
 
 async def transcribe_with_gemini(audio_path: str) -> str:
     """
@@ -47,7 +47,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
                 model=LITE_MODEL,
                 contents=[
                     "Accurately transcribe the audio content of this file. Return only the transcript text.",
-                    types.Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
+                    {"file_data": {"file_uri": uploaded_file.uri, "mime_type": uploaded_file.mime_type}}
                 ]
             )
         except Exception as lite_error:
@@ -56,7 +56,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
                 model=FLASH_MODEL,
                 contents=[
                     "Accurately transcribe the audio content of this file. Return only the transcript text.",
-                    types.Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
+                    {"file_data": {"file_uri": uploaded_file.uri, "mime_type": uploaded_file.mime_type}}
                 ]
             )
 
