@@ -47,7 +47,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
                 model=LITE_MODEL,
                 contents=[
                     "Accurately transcribe the audio content of this file. Return only the transcript text.",
-                    uploaded_file
+                    types.Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
                 ]
             )
         except Exception as lite_error:
@@ -56,7 +56,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
                 model=FLASH_MODEL,
                 contents=[
                     "Accurately transcribe the audio content of this file. Return only the transcript text.",
-                    uploaded_file
+                    types.Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
                 ]
             )
 
