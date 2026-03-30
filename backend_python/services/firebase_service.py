@@ -17,22 +17,31 @@ def update_job_status(job_id: str, data: dict):
 
 import requests
 
-def download_file_from_storage(storage_url: str, local_path: str):
+def download_file_from_storage(ref: str, local_path: str):
     """
-    Downloads a file from a URL (Firebase Storage signed/download URL) to a local path.
+    Downloads a file from either a full URL (HTTPS) or a Firebase Storage path.
     """
     try:
-        print(f"[FIREBASE] Downloading from URL: {storage_url[:50]}...", flush=True)
-        response = requests.get(storage_url, stream=True, timeout=30)
-        response.raise_for_status()
-        
-        with open(local_path, 'wb') as f:
-            for chunk in response.iter_content(chunk_size=8192):
-                f.write(chunk)
-                
-        print(f"[FIREBASE] Download complete: {local_path}")
+        # Case 1: Full URL (starts with http)
+        if ref.startswith("http"):
+            print(f"[FIREBASE] Downloading from URL: {ref[:50]}...", flush=True)
+            response = requests.get(ref, stream=True, timeout=60)
+            response.raise_for_status()
+            with open(local_path, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            print(f"[FIREBASE] Download complete via URL: {local_path}")
+            
+        # Case 2: Relative Storage Path (e.g. recordings/user/...)
+        else:
+            print(f"[FIREBASE] Downloading from Storage Path: {ref}", flush=True)
+            bucket = get_bucket()
+            blob = bucket.blob(ref)
+            blob.download_to_filename(local_path)
+            print(f"[FIREBASE] Download complete via Storage SDK: {local_path}")
+            
     except Exception as e:
-        print(f"[FIREBASE ERROR] Download failed: {str(e)}")
+        print(f"[FIREBASE ERROR] Download failed for '{ref[:50]}': {str(e)}")
         raise e
 
 def upload_file_to_storage(local_path: str, destination_path: str, content_type: str) -> str:
