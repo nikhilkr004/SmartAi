@@ -25,7 +25,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
     try:
         # 1. Upload file
         # The new SDK handles mime_type detection automatically or via config
-        uploaded_file = client.files.upload(path=audio_path)
+        uploaded_file = client.files.upload(file=audio_path)
         print(f"[GEMINI] File uploaded: {uploaded_file.name}. Monitoring status...", flush=True)
 
         # 2. Polling (Status in new SDK is 'ACTIVE' or 'PROCESSING')
