@@ -11,8 +11,7 @@ from config.firebase_config import get_db, get_bucket, get_auth
 from dotenv import load_dotenv
 
 load_dotenv()
-import google.generativeai as genai
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Gemini initialization is now handled within services/ai_service.py using the modern SDK
 
 app = FastAPI(title="Smart AI Classroom Assistant - Python Backend")
 # Ensure uploads directory exists

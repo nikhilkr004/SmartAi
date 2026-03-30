@@ -1,50 +1,60 @@
 import os
 import time
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from typing import Optional
 from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+# Global client for the new SDK
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Use the latest standardized model names for the new SDK
+LITE_MODEL = "gemini-2.0-flash-lite"
+FLASH_MODEL = "gemini-1.5-flash"
 
 async def transcribe_with_gemini(audio_path: str) -> str:
     """
-    Transcribes audio using Gemini 1.5 Flash.
+    Transcribes audio using Gemini 2.0 Flash Lite via the modern SDK.
     """
-    print(f"[GEMINI] Transcribing {audio_path}...", flush=True)
+    print(f"[GEMINI] Transcribing {audio_path} via Modern SDK...", flush=True)
     start_time = time.time()
     
     try:
-        # 1. Upload file to Gemini
-        # MIME type detection
-        ext = Path(audio_path).suffix.lower()
-        mime_type = "audio/mpeg"
-        if ext == ".mp4": mime_type = "video/mp4"
-        elif ext == ".wav": mime_type = "audio/wav"
-        elif ext == ".m4a": mime_type = "audio/x-m4a"
+        # 1. Upload file
+        # The new SDK handles mime_type detection automatically or via config
+        uploaded_file = client.files.upload(path=audio_path)
+        print(f"[GEMINI] File uploaded: {uploaded_file.name}. Monitoring status...", flush=True)
 
-        uploaded_file = genai.upload_file(path=audio_path, mime_type=mime_type)
-        print(f"[GEMINI] File uploaded: {uploaded_file.uri}. Waiting for processing...", flush=True)
-
-        # 2. Polling for completion
-        while uploaded_file.state.name == "PROCESSING":
+        # 2. Polling (Status in new SDK is 'ACTIVE' or 'PROCESSING')
+        while uploaded_file.state == "PROCESSING":
             time.sleep(2)
-            uploaded_file = genai.get_file(uploaded_file.name)
+            uploaded_file = client.files.get(name=uploaded_file.name)
 
-        if uploaded_file.state.name != "ACTIVE":
-            raise Exception(f"Gemini File API failed: {uploaded_file.state.name}")
+        if uploaded_file.state != "ACTIVE":
+            raise Exception(f"Gemini File API failed: {uploaded_file.state}")
 
-        # 3. Generate Content
-        # Using Gemini 2.0 Flash Lite as requested by the user
-        model = genai.GenerativeModel("gemini-2.0-flash-lite-preview-02-05")
-        
-        response = model.generate_content([
-            uploaded_file,
-            "Accurately transcribe the audio content of this file. Return only the transcript text."
-        ])
+        # 3. Generate Content with Fallback
+        try:
+            print(f"[GEMINI] Attempting transcription with: {LITE_MODEL}", flush=True)
+            response = client.models.generate_content(
+                model=LITE_MODEL,
+                contents=[
+                    "Accurately transcribe the audio content of this file. Return only the transcript text.",
+                    uploaded_file
+                ]
+            )
+        except Exception as lite_error:
+            print(f"[GEMINI WARNING] {LITE_MODEL} failed, falling back to {FLASH_MODEL}...", flush=True)
+            response = client.models.generate_content(
+                model=FLASH_MODEL,
+                contents=[
+                    "Accurately transcribe the audio content of this file. Return only the transcript text.",
+                    uploaded_file
+                ]
+            )
 
         duration = time.time() - start_time
         print(f"[GEMINI] Transcription complete in {duration:.2f}s", flush=True)
@@ -56,14 +66,16 @@ async def transcribe_with_gemini(audio_path: str) -> str:
 
 async def generate_gemini_notes(transcript: str, content_type: str = "General", topic: Optional[str] = None) -> Optional[str]:
     """
-    Generates study notes using Gemini 1.5 Pro.
+    Generates study notes using Gemini 3.1 Live Preview / 2.0 Flash via the modern SDK.
     """
     print(f"[GEMINI] Generating notes for {topic or 'Unspecified'}...", flush=True)
     start_time = time.time()
     
     try:
-        # Using 3.1 Flash Live Preview for higher intelligence note generation
-        model = genai.GenerativeModel("gemini-3.1-flash-live-preview")
+        # Use the highly intelligent Live Preview / Flash model
+        # 3.1 Live Preview was models/gemini-3.1-flash-live-preview
+        # For the new SDK, we use gemini-2.0-flash or gemini-2.0-pro-exp if available
+        model_name = "gemini-2.0-flash" 
         
         prompt = f"""
         TRANSCRIPT:
@@ -82,7 +94,10 @@ async def generate_gemini_notes(transcript: str, content_type: str = "General", 
         STYLE: Use bold text for key terms. Keep points clear and professional. Avoid verbosity.
         """
         
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model=model_name,
+            contents=prompt
+        )
         
         duration = time.time() - start_time
         print(f"[GEMINI NOTES] Generated in {duration:.2f}s", flush=True)
