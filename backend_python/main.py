@@ -11,6 +11,17 @@ from config.firebase_config import get_db, get_bucket, get_auth
 from dotenv import load_dotenv
 
 load_dotenv()
+import google.generativeai as genai
+
+# Configure Gemini for discovery
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+print("[GEMINI] Available Models for this Key:", flush=True)
+try:
+    for m in genai.list_models():
+        if 'generateContent' in m.supported_generation_methods:
+            print(f"  - {m.name}", flush=True)
+except Exception as e:
+    print(f"[GEMINI] Could not list models: {e}", flush=True)
 
 app = FastAPI(title="Smart AI Classroom Assistant - Python Backend")
 # Ensure uploads directory exists

@@ -38,7 +38,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
             raise Exception(f"Gemini File API failed: {uploaded_file.state.name}")
 
         # 3. Generate Content
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash-latest")
         
         response = model.generate_content([
             uploaded_file,
@@ -61,7 +61,7 @@ async def generate_gemini_notes(transcript: str, content_type: str = "General", 
     start_time = time.time()
     
     try:
-        model = genai.GenerativeModel("gemini-1.5-pro")
+        model = genai.GenerativeModel("gemini-1.5-pro-latest")
         
         prompt = f"""
         TRANSCRIPT:
