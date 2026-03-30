@@ -1,5 +1,6 @@
 import os
 import time
+import asyncio
 from google import genai
 from google.genai import types
 from typing import Optional
@@ -33,7 +34,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
 
         # 2. Polling (Status in new SDK is 'ACTIVE' or 'PROCESSING')
         while uploaded_file.state == "PROCESSING":
-            time.sleep(2)
+            await asyncio.sleep(2)
             uploaded_file = client.files.get(name=uploaded_file.name)
 
         if uploaded_file.state != "ACTIVE":
