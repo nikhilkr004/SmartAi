@@ -35,7 +35,7 @@ class ProcessRequest(BaseModel):
 
 @app.get("/")
 async def health_check():
-    return {"status": "online", "engine": "FastAPI/Python", "ai": "Gemini-2.5-Audio/3.1-Flash"}
+    return {"status": "online", "engine": "FastAPI/Python", "ai": "Gemini-2.0-Lite/3.1-Flash"}
 
 @app.post("/process")
 async def start_process(req: ProcessRequest, request: Request, background_tasks: BackgroundTasks):
