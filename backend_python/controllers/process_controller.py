@@ -12,14 +12,18 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
     """
     The main background worker that handles the end-to-end AI pipeline.
     """
-    local_audio = f"backend_python/uploads/{uuid.uuid4()}.mp3"
-    local_pdf = f"backend_python/uploads/{uuid.uuid4()}.pdf"
-    local_ppt = f"backend_python/uploads/{uuid.uuid4()}.pptx"
+    print(f"[WORKER-{job_id}] Received task. User: {user_id}, Topic: {topic}", flush=True)
+    
+    # Use paths relative to main.py
+    local_audio = f"uploads/{uuid.uuid4()}.mp3"
+    local_pdf = f"uploads/{uuid.uuid4()}.pdf"
+    local_ppt = f"uploads/{uuid.uuid4()}.pptx"
     
     try:
         # --- 1. DOWNLOAD ---
         update_job_status(job_id, {"status": "downloading", "progress": 10})
         download_file_from_storage(storage_url, local_audio)
+        print(f"[WORKER-{job_id}] Download complete.", flush=True)
 
         # --- 2. TRANSCRIBE ---
         update_job_status(job_id, {"status": "transcribing", "progress": 30})
@@ -31,6 +35,7 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
 
         if not transcript:
             raise Exception("Transcription failed on all providers.")
+        print(f"[WORKER-{job_id}] Transcription successful.", flush=True)
 
         # --- 3. GENERATE NOTES ---
         update_job_status(job_id, {"status": "generating_notes", "progress": 60, "transcript": transcript})
@@ -38,6 +43,7 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
         
         if not notes:
             raise Exception("Note generation failed.")
+        print(f"[WORKER-{job_id}] Notes generated.", flush=True)
 
         # --- 4. EXPORT (PDF & PPT) ---
         update_job_status(job_id, {"status": "finalizing", "progress": 85})
@@ -58,9 +64,10 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
             "pptUrl": ppt_url, 
             "notes": notes
         })
+        print(f"[WORKER-{job_id}] Job completed successfully!", flush=True)
 
     except Exception as e:
-        print(f"[BG-PROCESS ERROR] {str(e)}")
+        print(f"[WORKER-{job_id} ERROR] {str(e)}", flush=True)
         update_job_status(job_id, {"status": "failed", "error": str(e)})
     finally:
         # Cleanup

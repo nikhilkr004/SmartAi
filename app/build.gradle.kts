@@ -16,7 +16,7 @@ android {
         versionName = "1.0"
 
         // Render production backend (Python FastAPI)
-        buildConfigField("String", "BASE_URL", "\"https://studyai-backend-i3jq.onrender.com/\"")
+        buildConfigField("String", "BASE_URL", "\"https://smartai-93hc.onrender.com/\"")
     }
 
     buildTypes {

@@ -18,7 +18,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
     """
     Transcribes audio using Gemini 2.5 Flash.
     """
-    print(f"[GEMINI] Transcribing {audio_path}...")
+    print(f"[GEMINI] Transcribing {audio_path}...", flush=True)
     start_time = time.time()
     
     try:
@@ -31,7 +31,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
         elif ext == ".m4a": mime_type = "audio/x-m4a"
 
         uploaded_file = genai.upload_file(path=audio_path, mime_type=mime_type)
-        print(f"[GEMINI] File uploaded: {uploaded_file.uri}. Waiting for processing...")
+        print(f"[GEMINI] File uploaded: {uploaded_file.uri}. Waiting for processing...", flush=True)
 
         # 2. Polling for completion
         while uploaded_file.state.name == "PROCESSING":
@@ -52,18 +52,18 @@ async def transcribe_with_gemini(audio_path: str) -> str:
         ])
 
         duration = time.time() - start_time
-        print(f"[GEMINI] Transcription complete in {duration:.2f}s")
+        print(f"[GEMINI] Transcription complete in {duration:.2f}s", flush=True)
         return response.text
         
     except Exception as e:
-        print(f"[GEMINI ERROR] {str(e)}")
+        print(f"[GEMINI ERROR] {str(e)}", flush=True)
         raise e
 
 async def transcribe_with_whisper(audio_path: str) -> str:
     """
     Fallback transcription using OpenAI Whisper.
     """
-    print(f"[WHISPER] Transcribing {audio_path}...")
+    print(f"[WHISPER] Transcribing {audio_path}...", flush=True)
     start_time = time.time()
     
     try:
@@ -74,17 +74,17 @@ async def transcribe_with_whisper(audio_path: str) -> str:
             )
         
         duration = time.time() - start_time
-        print(f"[WHISPER] Transcription complete in {duration:.2f}s")
+        print(f"[WHISPER] Transcription complete in {duration:.2f}s", flush=True)
         return transcript.text
     except Exception as e:
-        print(f"[WHISPER ERROR] {str(e)}")
+        print(f"[WHISPER ERROR] {str(e)}", flush=True)
         raise e
 
 async def generate_gemini_notes(transcript: str, content_type: str = "General", topic: Optional[str] = None) -> Optional[str]:
     """
     Generates study notes using Gemini 2.5 Pro.
     """
-    print(f"[GEMINI] Generating notes for {topic or 'Unspecified'}...")
+    print(f"[GEMINI] Generating notes for {topic or 'Unspecified'}...", flush=True)
     start_time = time.time()
     
     try:
@@ -110,8 +110,8 @@ async def generate_gemini_notes(transcript: str, content_type: str = "General", 
         response = model.generate_content(prompt)
         
         duration = time.time() - start_time
-        print(f"[GEMINI NOTES] Generated in {duration:.2f}s")
+        print(f"[GEMINI NOTES] Generated in {duration:.2f}s", flush=True)
         return response.text
     except Exception as e:
-        print(f"[GEMINI NOTES ERROR] {str(e)}")
+        print(f"[GEMINI NOTES ERROR] {str(e)}", flush=True)
         return None

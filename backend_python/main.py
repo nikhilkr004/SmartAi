@@ -13,6 +13,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = FastAPI(title="Smart AI Classroom Assistant - Python Backend")
+# Ensure uploads directory exists
+os.makedirs("uploads", exist_ok=True)
 
 # CORS
 app.add_middleware(
@@ -50,7 +52,7 @@ async def start_process(req: ProcessRequest, request: Request, background_tasks:
             try:
                 decoded_token = get_auth().verify_id_token(token)
                 user_id = decoded_token['uid']
-                print(f"[AUTH SUCCESS] Verified Token for User: {user_id}")
+                print(f"[AUTH SUCCESS] Verified Token for User: {user_id}", flush=True)
             except Exception as e:
                 error_msg = str(e)
                 print(f"[AUTH ERROR] Token verification failed: {error_msg}")
@@ -71,7 +73,7 @@ async def start_process(req: ProcessRequest, request: Request, background_tasks:
         else:
             raise HTTPException(status_code=401, detail="Missing userId in body and no valid Bearer token")
 
-    print(f"[API] Processing request for User: {user_id}, Job: {job_id}")
+    print(f"[API] Processing request for User: {user_id}, Job: {job_id}", flush=True)
     
     # Initialize job in Firestore
     update_job_status(job_id, {

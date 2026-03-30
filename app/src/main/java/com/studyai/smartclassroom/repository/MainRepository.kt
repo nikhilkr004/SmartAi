@@ -127,8 +127,9 @@ class MainRepository(
                     pdfUrl = snap.getString("pdfUrl") ?: "",
                     videoUrl = snap.getString("videoUrl") ?: ""
                 )
-            } else if (status == "error") {
+            } else if (status == "error" || status == "failed") {
                 val error = snap.getString("error") ?: "AI Processing Error"
+                Log.e(Constants.TAG, "AI FAILED: $error")
                 throw RuntimeException("AI Error: $error")
             }
             attempts++
