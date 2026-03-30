@@ -12,12 +12,13 @@ load_dotenv()
 # Global client for the new SDK, explicitly using 'v1' to avoid v1beta 404 errors
 client = genai.Client(
     api_key=os.getenv("GEMINI_API_KEY"),
-    http_options={'api_version': 'v1beta'}
+    http_options={'api_version': 'v1'}
 )
 
 # Use stable, production-ready model identifiers
-LITE_MODEL = "models/gemini-2.0-flash-lite-preview-02-05" # Most stable for v1beta
-FLASH_MODEL = "models/gemini-1.5-flash"
+LITE_MODEL = "gemini-1.5-flash" 
+FLASH_MODEL = "gemini-1.5-flash"
+PRO_MODEL = "gemini-1.5-pro"
 
 async def transcribe_with_gemini(audio_path: str) -> str:
     """
@@ -47,7 +48,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
                 model=LITE_MODEL,
                 contents=[
                     "Accurately transcribe the audio content of this file. Return only the transcript text.",
-                    {"file_data": {"file_uri": uploaded_file.uri, "mime_type": uploaded_file.mime_type}}
+                    types.Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
                 ]
             )
         except Exception as lite_error:
@@ -56,7 +57,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
                 model=FLASH_MODEL,
                 contents=[
                     "Accurately transcribe the audio content of this file. Return only the transcript text.",
-                    {"file_data": {"file_uri": uploaded_file.uri, "mime_type": uploaded_file.mime_type}}
+                    types.Part.from_uri(file_uri=uploaded_file.uri, mime_type=uploaded_file.mime_type)
                 ]
             )
 
@@ -79,7 +80,7 @@ async def generate_gemini_notes(transcript: str, content_type: str = "General", 
         # Use the highly intelligent Live Preview / Flash model
         # 3.1 Live Preview was models/gemini-3.1-flash-live-preview
         # For the new SDK, we use gemini-2.0-flash or gemini-2.0-pro-exp if available
-        model_name = "gemini-1.5-pro" 
+        model_name = PRO_MODEL
         
         prompt = f"""
         TRANSCRIPT:

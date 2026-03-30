@@ -14,8 +14,13 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
     """
     print(f"[WORKER-{job_id}] Received task. User: {user_id}, Topic: {topic}", flush=True)
     
-    # Use paths relative to main.py
-    local_audio = f"uploads/{uuid.uuid4()}.mp3"
+    # Dynamically resolve extension to avoid MIME mismatches (e.g. .mp4 saved as .mp3)
+    ext = ".mp3" # default fallback
+    if ".mp4" in storage_url.lower(): ext = ".mp4"
+    elif ".wav" in storage_url.lower(): ext = ".wav"
+    elif ".m4a" in storage_url.lower(): ext = ".m4a"
+    
+    local_audio = f"uploads/{uuid.uuid4()}{ext}"
     local_pdf = f"uploads/{uuid.uuid4()}.pdf"
     local_ppt = f"uploads/{uuid.uuid4()}.pptx"
     
