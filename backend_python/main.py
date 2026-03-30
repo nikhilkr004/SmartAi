@@ -52,8 +52,22 @@ async def start_process(req: ProcessRequest, request: Request, background_tasks:
                 user_id = decoded_token['uid']
                 print(f"[AUTH SUCCESS] Verified Token for User: {user_id}")
             except Exception as e:
-                print(f"[AUTH ERROR] Token verification failed: {str(e)}")
-                raise HTTPException(status_code=401, detail=f"Invalid Auth Token: {str(e)}")
+                error_msg = str(e)
+                print(f"[AUTH ERROR] Token verification failed: {error_msg}")
+                
+                # Check for the common "missing project id" error
+                if "project ID is required" in error_msg or "project_id" in error_msg.lower():
+                    detail = (
+                        "Invalid Auth Token: A project ID is required to access the auth service.\n"
+                        "TROUBLESHOOTING:\n"
+                        "1. On Render, ensure 'FIREBASE_CREDENTIALS_JSON' env var is set with the full service account JSON contents.\n"
+                        "2. Ensure 'FIREBASE_PROJECT_ID' is set to 'new-e70d7'.\n"
+                        "3. Check that 'FIREBASE_STORAGE_BUCKET' is set to 'new-e70d7.firebasestorage.app'."
+                    )
+                else:
+                    detail = f"Invalid Auth Token: {error_msg}"
+                    
+                raise HTTPException(status_code=401, detail=detail)
         else:
             raise HTTPException(status_code=401, detail="Missing userId in body and no valid Bearer token")
 
