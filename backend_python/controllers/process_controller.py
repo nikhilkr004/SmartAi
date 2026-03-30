@@ -2,7 +2,7 @@ import os
 import uuid
 import asyncio
 from fastapi import BackgroundTasks
-from services.ai_service import transcribe_with_gemini, transcribe_with_whisper, generate_gemini_notes
+from services.ai_service import transcribe_with_gemini, generate_gemini_notes
 from services.firebase_service import update_job_status, download_file_from_storage, upload_file_to_storage
 from services.pdf_service import create_notes_pdf
 from services.ppt_service import create_study_ppt
@@ -27,14 +27,10 @@ async def process_audio_background(job_id: str, storage_url: str, user_id: str, 
 
         # --- 2. TRANSCRIBE ---
         update_job_status(job_id, {"status": "transcribing", "progress": 30})
-        try:
-            transcript = await transcribe_with_gemini(local_audio)
-        except:
-            print("[BG-PROCESS] Gemini failed, falling back to Whisper...")
-            transcript = await transcribe_with_whisper(local_audio)
+        transcript = await transcribe_with_gemini(local_audio)
 
         if not transcript:
-            raise Exception("Transcription failed on all providers.")
+            raise Exception("Transcription failed.")
         print(f"[WORKER-{job_id}] Transcription successful.", flush=True)
 
         # --- 3. GENERATE NOTES ---

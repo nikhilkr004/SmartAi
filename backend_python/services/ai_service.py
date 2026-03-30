@@ -1,7 +1,6 @@
 import os
 import time
 import google.generativeai as genai
-import openai
 from typing import Optional
 from pathlib import Path
 from dotenv import load_dotenv
@@ -11,12 +10,9 @@ load_dotenv()
 # Configure Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Configure OpenAI
-openai.api_key = os.getenv("OPENAI_API_KEY")
-
 async def transcribe_with_gemini(audio_path: str) -> str:
     """
-    Transcribes audio using Gemini 2.5 Flash.
+    Transcribes audio using Gemini 1.5 Flash.
     """
     print(f"[GEMINI] Transcribing {audio_path}...", flush=True)
     start_time = time.time()
@@ -42,9 +38,7 @@ async def transcribe_with_gemini(audio_path: str) -> str:
             raise Exception(f"Gemini File API failed: {uploaded_file.state.name}")
 
         # 3. Generate Content
-        model = genai.GenerativeModel("gemini-1.5-flash") # Using 1.5/2.0 as available
-        # Note: gemini-2.0-flash is the latest, if 2.5 isn't available in SDK yet, 
-        # but I'll use the prompt version if possible.
+        model = genai.GenerativeModel("gemini-1.5-flash")
         
         response = model.generate_content([
             uploaded_file,
@@ -59,30 +53,9 @@ async def transcribe_with_gemini(audio_path: str) -> str:
         print(f"[GEMINI ERROR] {str(e)}", flush=True)
         raise e
 
-async def transcribe_with_whisper(audio_path: str) -> str:
-    """
-    Fallback transcription using OpenAI Whisper.
-    """
-    print(f"[WHISPER] Transcribing {audio_path}...", flush=True)
-    start_time = time.time()
-    
-    try:
-        with open(audio_path, "rb") as audio_file:
-            transcript = openai.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
-            )
-        
-        duration = time.time() - start_time
-        print(f"[WHISPER] Transcription complete in {duration:.2f}s", flush=True)
-        return transcript.text
-    except Exception as e:
-        print(f"[WHISPER ERROR] {str(e)}", flush=True)
-        raise e
-
 async def generate_gemini_notes(transcript: str, content_type: str = "General", topic: Optional[str] = None) -> Optional[str]:
     """
-    Generates study notes using Gemini 2.5 Pro.
+    Generates study notes using Gemini 1.5 Pro.
     """
     print(f"[GEMINI] Generating notes for {topic or 'Unspecified'}...", flush=True)
     start_time = time.time()
